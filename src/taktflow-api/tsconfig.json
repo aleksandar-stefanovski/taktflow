@@ -1,0 +1,26 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "dist",
+    "paths": {
+      "@domain/*":         ["../taktflow-domain/*"],
+      "@persistence/*":    ["../taktflow-persistence/*"],
+      "@infrastructure/*": ["../taktflow-infrastructure/*"],
+      "@application/*":    ["../taktflow-application/*"],
+      "@types/*":          ["../../packages/taktflow-types/*"],
+      "@utils/*":          ["../../packages/taktflow-utils/*"],
+      "@api/*":            ["./*"]
+    }
+  },
+  "references": [
+    { "path": "../taktflow-domain" },
+    { "path": "../taktflow-persistence" },
+    { "path": "../taktflow-application" },
+    { "path": "../taktflow-infrastructure" },
+    { "path": "../../packages/taktflow-types" },
+    { "path": "../../packages/taktflow-utils" }
+  ],
+  "include": ["routes", "base", "middleware", "plugins", "extensions", "interfaces", "config", "infrastructure", "app.ts", "server.ts"],
+  "exclude": ["node_modules", "dist"]
+}

@@ -1,0 +1,21 @@
+{
+  "name": "taktflow",
+  "private": true,
+  "version": "0.0.0",
+  "engines": {
+    "node": ">=22",
+    "pnpm": ">=9"
+  },
+  "scripts": {
+    "build": "pnpm -r build",
+    "dev:api": "pnpm --filter @taktflow/api dev",
+    "dev:worker": "pnpm --filter @taktflow/worker dev"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsc-alias": "^1.8.17",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0",
+    "vitest": "^2.0.0"
+  }
+}

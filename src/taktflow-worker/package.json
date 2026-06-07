@@ -1,0 +1,32 @@
+{
+  "name": "@taktflow/worker",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/worker.js",
+  "types": "./dist/worker.d.ts",
+  "scripts": {
+    "build": "tsc && tsc-alias",
+    "dev": "tsx watch worker.ts",
+    "start": "tsx worker.ts"
+  },
+  "dependencies": {
+    "@taktflow/domain": "workspace:*",
+    "@taktflow/infra": "workspace:*",
+    "@taktflow/persistence": "workspace:*",
+    "@taktflow/types": "workspace:*",
+    "@taktflow/utils": "workspace:*",
+    "@types/pg": "^8.20.0",
+    "cron-parser": "^4.9.0",
+    "dotenv": "^16.4.0",
+    "pg": "^8.21.0",
+    "pino": "^9.0.0",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0",
+    "vitest": "^2.0.0"
+  }
+}

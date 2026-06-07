@@ -1,0 +1,30 @@
+{
+  "name": "@taktflow/infra",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc && tsc-alias",
+    "dev": "tsc --watch"
+  },
+  "dependencies": {
+    "@taktflow/domain": "workspace:*",
+    "@taktflow/persistence": "workspace:*",
+    "@taktflow/types": "workspace:*",
+    "ioredis": "^5.11.1",
+    "resend": "^4.0.0",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0"
+  }
+}

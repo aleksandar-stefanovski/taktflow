@@ -1,0 +1,13 @@
+{
+  "files": [],
+  "references": [
+    { "path": "packages/taktflow-types" },
+    { "path": "packages/taktflow-utils" },
+    { "path": "src/taktflow-domain" },
+    { "path": "src/taktflow-persistence" },
+    { "path": "src/taktflow-application" },
+    { "path": "src/taktflow-infrastructure" },
+    { "path": "src/taktflow-worker" },
+    { "path": "src/taktflow-api" }
+  ]
+}

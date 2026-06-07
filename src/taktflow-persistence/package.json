@@ -1,0 +1,33 @@
+{
+  "name": "@taktflow/persistence",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc && tsc-alias",
+    "dev": "tsc --watch",
+    "generate": "node --require tsx/cjs node_modules/drizzle-kit/bin.cjs generate",
+    "migrate": "node --require tsx/cjs node_modules/drizzle-kit/bin.cjs migrate"
+  },
+  "dependencies": {
+    "@taktflow/domain": "workspace:*",
+    "@taktflow/types": "workspace:*",
+    "drizzle-orm": "^0.38.0",
+    "pg": "^8.13.0",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/pg": "^8.11.0",
+    "drizzle-kit": "^0.30.0",
+    "typescript": "^5.7.0"
+  }
+}

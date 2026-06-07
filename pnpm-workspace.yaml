@@ -1,0 +1,7 @@
+packages:
+  - 'src/*'
+  - 'src/taktflow-application'
+  - 'packages/*'
+allowBuilds:
+  argon2: true
+  esbuild: true

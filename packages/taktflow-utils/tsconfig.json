@@ -1,0 +1,13 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "dist",
+    "paths": {}
+  },
+  "references": [
+    { "path": "../../packages/taktflow-types" }
+  ],
+  "include": ["."],
+  "exclude": ["node_modules", "dist"]
+}
