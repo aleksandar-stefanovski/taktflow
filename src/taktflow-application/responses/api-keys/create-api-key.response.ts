@@ -16,4 +16,8 @@ export class CreateApiKeyResponse {
     this.rawKey      = rawKey;
     this.createdAt   = apiKey.createdAt.toISOString();
   }
+
+  static mapFromEntity(apiKey: ApiKey, rawKey: string): CreateApiKeyResponse {
+    return new CreateApiKeyResponse(apiKey, rawKey);
+  }
 }

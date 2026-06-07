@@ -2,8 +2,6 @@ import { BaseEntity } from './base-entity.js';
 import type { HasTenant } from '../interfaces/has-tenant.interface.js';
 import type { HasSoftDelete } from '../interfaces/has-soft-delete.interface.js';
 import type { ConsumerConfig } from '../interfaces/consumer-config.interface.js';
-import { DEFAULT_CONSUMER_CONFIG } from '../constants/consumer-config.constants.js';
-
 export type ConsumerType   = 'push' | 'pull';
 export type ConsumerStatus = 'active' | 'paused';
 export type RetryBackoff   = 'exponential' | 'fixed' | 'linear';
@@ -29,7 +27,7 @@ export class Consumer extends BaseEntity implements HasTenant, HasSoftDelete {
     secret:      string;
     environment: string;
     status?:     ConsumerStatus;
-    config?:     Partial<ConsumerConfig>;
+    config:      ConsumerConfig;
     id?:         string;
     createdAt?:  Date;
     updatedAt?:  Date;
@@ -43,6 +41,6 @@ export class Consumer extends BaseEntity implements HasTenant, HasSoftDelete {
     this.secret      = props.secret;
     this.environment = props.environment;
     this.status      = props.status ?? 'active';
-    this.config      = { ...DEFAULT_CONSUMER_CONFIG, ...props.config };
+    this.config      = props.config;
   }
 }

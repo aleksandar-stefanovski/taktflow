@@ -14,4 +14,8 @@ export class TenantResponse {
     this.createdAt = tenant.createdAt.toISOString();
     this.updatedAt = tenant.updatedAt.toISOString();
   }
+
+  static mapFromEntity(tenant: Tenant): TenantResponse {
+    return new TenantResponse(tenant);
+  }
 }

@@ -28,4 +28,8 @@ export class GetEventDetailResponse {
     this.createdAt      = event.createdAt.toISOString();
     this.updatedAt      = event.updatedAt.toISOString();
   }
+
+  static mapFromEntity(event: Event): GetEventDetailResponse {
+    return new GetEventDetailResponse(event);
+  }
 }

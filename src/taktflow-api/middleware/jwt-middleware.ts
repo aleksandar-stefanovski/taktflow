@@ -1,6 +1,15 @@
 import type { FastifyRequest, FastifyReply } from 'fastify';
 
 import { UnauthorizedException } from '@domain/exceptions/unauthorized-exception.js';
+import { TokenService } from '@infrastructure/auth/token-service.js';
+import { authConfig } from '@api/config/auth.config.js';
+
+const tokenService = new TokenService(
+  authConfig.JWT_ACCESS_SECRET,
+  authConfig.JWT_REFRESH_SECRET,
+  authConfig.JWT_ACCESS_TOKEN_EXPIRY,
+  authConfig.REFRESH_TOKEN_EXPIRY_DAYS,
+);
 
 export async function jwtMiddleware(
   request: FastifyRequest,
@@ -15,7 +24,7 @@ export async function jwtMiddleware(
 
   let payload: { sub: string; orgId: string };
   try {
-    payload = await request.server.services.token.verifyAccessToken(token);
+    payload = await tokenService.verifyAccessToken(token);
   } catch {
     throw new UnauthorizedException('Invalid or expired access token');
   }

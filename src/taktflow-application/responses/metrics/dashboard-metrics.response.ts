@@ -21,4 +21,8 @@ export class DashboardMetricsResponse {
       : 0;
     this.updatedAt           = metrics.updatedAt.toISOString();
   }
+
+  static mapFromEntity(metrics: TenantMetrics): DashboardMetricsResponse {
+    return new DashboardMetricsResponse(metrics);
+  }
 }

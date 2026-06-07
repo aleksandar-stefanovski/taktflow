@@ -15,4 +15,8 @@ export class TopicDetailResponse {
     this.createdAt = topic.createdAt.toISOString();
     this.updatedAt = topic.updatedAt.toISOString();
   }
+
+  static mapFromEntity(topic: Topic): TopicDetailResponse {
+    return new TopicDetailResponse(topic);
+  }
 }

@@ -25,4 +25,8 @@ export class ConsumerDetailResponse {
     this.createdAt   = consumer.createdAt.toISOString();
     this.updatedAt   = consumer.updatedAt.toISOString();
   }
+
+  static mapFromEntity(consumer: Consumer): ConsumerDetailResponse {
+    return new ConsumerDetailResponse(consumer);
+  }
 }

@@ -14,10 +14,10 @@ export const consumers = pgTable('consumers', {
   environment: varchar('environment', { length: 50 }).notNull().default('production'),
   status:      varchar('status', { length: 20 }).notNull().default('active'),
   config:      jsonb('config').notNull().default({
-    timeoutSeconds: 30,
+    timeoutMs: 30_000,
     retryAttempts: 3,
     retryBackoff: 'exponential',
-    retryInitialDelay: 30,
+    retryInitialDelayMs: 30_000,
     alertAfterFailures: 3,
     alertEmail: null,
     maxConcurrent: 10,

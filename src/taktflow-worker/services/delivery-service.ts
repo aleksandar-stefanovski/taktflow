@@ -1,5 +1,6 @@
 import { createHash, createHmac } from 'crypto';
-import { canonicalJson } from '@utils/canonical-json.helper.js';
+import { canonicalJson } from '@application/helpers/canonical-json.helper.js';
+import { DELIVERY_HEADERS } from '@infrastructure/constants/delivery-headers.constants.js';
 
 import type { WorkerDependencies } from '../interfaces/worker-dependencies.interface.js';
 import type { ClaimedDelivery } from '../models/delivery.model.js';
@@ -8,7 +9,6 @@ import type { Consumer } from '@domain/entities/consumer.js';
 import type { Topic } from '@domain/entities/topic.js';
 import type { RetryService } from './retry-service.js';
 import type { MetricsService } from './metrics-service.js';
-import { PIPELINE_HEADERS } from '@types/header-constants.js';
 
 export class DeliveryService {
   private activeDeliveries = 0;
@@ -154,12 +154,12 @@ export class DeliveryService {
       .digest('hex');
 
     return {
-      'Content-Type':                  'application/json',
-      [PIPELINE_HEADERS.EVENT_ID]:     event.id,
-      [PIPELINE_HEADERS.TOPIC]:        topic?.name ?? event.topicId,
-      [PIPELINE_HEADERS.SIGNATURE]:    `sha256=${signature}`,
-      [PIPELINE_HEADERS.TIMESTAMP]:    timestamp,
-      [PIPELINE_HEADERS.ATTEMPT]:      String(delivery.retry_count),
+      'Content-Type':                       'application/json',
+      [DELIVERY_HEADERS.EVENT_ID]:          event.id,
+      [DELIVERY_HEADERS.TOPIC]:             topic?.name ?? event.topicId,
+      [DELIVERY_HEADERS.SIGNATURE]:         `sha256=${signature}`,
+      [DELIVERY_HEADERS.TIMESTAMP]:         timestamp,
+      [DELIVERY_HEADERS.ATTEMPT]:           String(delivery.retry_count),
     };
   }
 

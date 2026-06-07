@@ -1,12 +1,10 @@
-import type { ApplicationHandlers } from '../interfaces/application-handlers.interface.js';
-import type { ApplicationRepositories } from '../interfaces/application-repositories.interface.js';
-import type { ApplicationServices } from '../interfaces/application-services.interface.js';
+import type { ApplicationDomainServices } from '@api/interfaces/application-domain-services.interface.js';
+import type { ApplicationRepositories } from '@api/interfaces/application-repositories.interface.js';
 
 declare module 'fastify' {
   interface FastifyInstance {
-    handlers: ApplicationHandlers;
     repos:    ApplicationRepositories;
-    services: ApplicationServices;
+    services: ApplicationDomainServices;
   }
 
   interface FastifyRequest {

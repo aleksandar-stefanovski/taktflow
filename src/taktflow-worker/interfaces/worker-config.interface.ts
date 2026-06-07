@@ -2,7 +2,7 @@ export interface WorkerConfig {
   batchSize: number;
   pollIntervalMs: number;
   deliveryTimeoutMs: number;
-  retryDelaysSeconds: readonly number[];
+  retryBaseDelayMs: number;
   maxResponseBodyBytes: number;
   defaultRetryAttempts: number;
   schedulerIntervalMs: number;
@@ -11,7 +11,7 @@ export interface WorkerConfig {
   retryIntervalMs: number;
   awaitingAckTimeoutHours: number;
   unstuckIntervalMs: number;
-  stuckThresholdSeconds: number;
+  stuckThresholdMs: number;
   alertIntervalMs: number;
   memoryWarningThresholdMb: number;
   metricsFlushIntervalMs: number;

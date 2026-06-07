@@ -7,8 +7,7 @@
       "@domain/*":         ["../taktflow-domain/*"],
       "@persistence/*":    ["../taktflow-persistence/*"],
       "@infrastructure/*": ["../taktflow-infrastructure/*"],
-      "@types/*":          ["../../packages/taktflow-types/*"],
-      "@utils/*":          ["../../packages/taktflow-utils/*"],
+      "@application/*":    ["../taktflow-application/*"],
       "@worker/*":         ["./*"]
     }
   },
@@ -16,8 +15,7 @@
     { "path": "../taktflow-domain" },
     { "path": "../taktflow-persistence" },
     { "path": "../taktflow-infrastructure" },
-    { "path": "../../packages/taktflow-types" },
-    { "path": "../../packages/taktflow-utils" }
+    { "path": "../taktflow-application" }
   ],
   "include": ["engine", "services", "interfaces", "models", "helpers", "extensions", "config", "worker.ts"],
   "exclude": ["node_modules", "dist"]

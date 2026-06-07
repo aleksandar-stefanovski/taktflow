@@ -10,13 +10,14 @@ import {
   ConsumedEventsResponseSchema,
 } from '@application/validators/event-validators.js';
 import { ConsumeEventsQuerySchema } from '@application/validators/tenant-validators.js';
-import { EventMapper } from '@application/mappers/event-mapper.js';
 import { ProduceEventResponse } from '@application/responses/events/produce-event.response.js';
-import { ConsumedEventsResponse } from '@application/responses/events/consumed-events.response.js';
+import { ConsumedEventResponse } from '@application/responses/events/consumed-event.response.js';
+import { EventSummaryResponse } from '@application/responses/events/event-summary.response.js';
+import { GetEventDetailResponse } from '@application/responses/events/get-event-detail.response.js';
 
-import { apiKeyMiddleware } from '../../../middleware/api-key-middleware.js';
-import { jwtMiddleware }    from '../../../middleware/jwt-middleware.js';
-import { zodToJsonSchema, ErrorResponseSchema } from '../../../schemas/api-schemas.js';
+import { apiKeyMiddleware } from '@api/middleware/api-key-middleware.js';
+import { jwtMiddleware }    from '@api/middleware/jwt-middleware.js';
+import { zodToJsonSchema, ErrorResponseSchema } from '@api/schemas/api-schemas.js';
 
 export async function eventsRoutes(app: FastifyInstance): Promise<void> {
   app.post('/', {
@@ -35,11 +36,11 @@ export async function eventsRoutes(app: FastifyInstance): Promise<void> {
     preHandler: [apiKeyMiddleware],
   }, async (request, reply) => {
     const body  = ProduceEventSchema.parse(request.body);
-    const event = await app.handlers.produceEvent.handle({
+    const event = await app.services.events.produce({
       ...body,
       tenantId: request.tenantId!,
     });
-    reply.code(201).send(new ProduceEventResponse(event));
+    reply.code(201).send(ProduceEventResponse.mapFromEntity(event));
   });
 
   app.get('/', {
@@ -56,11 +57,11 @@ export async function eventsRoutes(app: FastifyInstance): Promise<void> {
     preHandler: [jwtMiddleware],
   }, async (request, reply) => {
     const query  = ListEventsSchema.parse(request.query);
-    const result = await app.handlers.listEvents.handle({
+    const result = await app.services.events.list({
       ...query,
       tenantId: request.tenantId!,
     });
-    reply.send(EventMapper.toListResponse(result));
+    reply.send({ ...result, items: result.items.map(EventSummaryResponse.mapFromEntity) });
   });
 
   app.get('/consume', {
@@ -78,12 +79,12 @@ export async function eventsRoutes(app: FastifyInstance): Promise<void> {
     preHandler: [jwtMiddleware],
   }, async (request, reply) => {
     const query  = ConsumeEventsQuerySchema.parse(request.query);
-    const events = await app.handlers.consumeEvents.handle(
+    const events = await app.services.consumers.consume(
       query.consumerId,
       request.tenantId!,
       query.limit,
     );
-    reply.send(new ConsumedEventsResponse(events));
+    reply.send({ items: events.map(ConsumedEventResponse.mapFromEntity), count: events.length });
   });
 
   app.post('/:id/acknowledge', {
@@ -105,7 +106,7 @@ export async function eventsRoutes(app: FastifyInstance): Promise<void> {
   }, async (request, reply) => {
     const { id } = request.params as { id: string };
     const body   = AcknowledgeEventSchema.parse(request.body);
-    await app.handlers.acknowledgeEvent.handle(id, {
+    await app.services.consumers.acknowledge(id, {
       ...body,
       tenantId: request.tenantId!,
     });
@@ -127,7 +128,7 @@ export async function eventsRoutes(app: FastifyInstance): Promise<void> {
     preHandler: [jwtMiddleware],
   }, async (request, reply) => {
     const { id } = request.params as { id: string };
-    const event  = await app.handlers.getEventDetail.handle(id, request.tenantId!);
-    reply.send(EventMapper.toDetailResponse(event));
+    const event  = await app.services.events.getById(id, request.tenantId!);
+    reply.send(GetEventDetailResponse.mapFromEntity(event));
   });
 }

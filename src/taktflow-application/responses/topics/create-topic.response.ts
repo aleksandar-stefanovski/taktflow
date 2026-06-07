@@ -13,4 +13,8 @@ export class CreateTopicResponse {
     this.config    = topic.config;
     this.createdAt = topic.createdAt.toISOString();
   }
+
+  static mapFromEntity(topic: Topic): CreateTopicResponse {
+    return new CreateTopicResponse(topic);
+  }
 }

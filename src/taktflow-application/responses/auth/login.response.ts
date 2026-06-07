@@ -10,14 +10,9 @@ export class LoginResponse {
     this.refreshToken = data.refreshToken;
     this.user         = data.user;
   }
-}
 
-export class RefreshTokenResponse {
-  readonly accessToken:  string;
-  readonly refreshToken: string;
-
-  constructor(data: { accessToken: string; refreshToken: string }) {
-    this.accessToken  = data.accessToken;
-    this.refreshToken = data.refreshToken;
+  static mapFromEntity(data: { accessToken: string; refreshToken: string; user: LoginUserSummary }): LoginResponse {
+    return new LoginResponse(data);
   }
 }
+

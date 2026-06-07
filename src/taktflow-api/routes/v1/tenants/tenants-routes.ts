@@ -8,8 +8,8 @@ import {
 import { TenantResponse } from '@application/responses/tenants/tenant.response.js';
 import { UsageResponse } from '@application/responses/tenants/usage.response.js';
 
-import { jwtMiddleware } from '../../../middleware/jwt-middleware.js';
-import { zodToJsonSchema, ErrorResponseSchema } from '../../../schemas/api-schemas.js';
+import { jwtMiddleware } from '@api/middleware/jwt-middleware.js';
+import { zodToJsonSchema, ErrorResponseSchema } from '@api/schemas/api-schemas.js';
 
 export async function tenantsRoutes(app: FastifyInstance): Promise<void> {
   app.get('/me', {
@@ -24,8 +24,8 @@ export async function tenantsRoutes(app: FastifyInstance): Promise<void> {
     },
     preHandler: [jwtMiddleware],
   }, async (request, reply) => {
-    const tenant = await app.handlers.getTenant.handle(request.tenantId!);
-    reply.send(new TenantResponse(tenant));
+    const tenant = await app.services.tenants.getById(request.tenantId!);
+    reply.send(TenantResponse.mapFromEntity(tenant));
   });
 
   app.put('/me', {
@@ -43,11 +43,11 @@ export async function tenantsRoutes(app: FastifyInstance): Promise<void> {
     preHandler: [jwtMiddleware],
   }, async (request, reply) => {
     const body   = UpdateTenantSchema.parse(request.body);
-    const tenant = await app.handlers.updateTenant.handle({
+    const tenant = await app.services.tenants.update({
       tenantId: request.tenantId!,
       name:     body.name,
     });
-    reply.send(new TenantResponse(tenant));
+    reply.send(TenantResponse.mapFromEntity(tenant));
   });
 
   app.get('/me/usage', {
@@ -62,7 +62,7 @@ export async function tenantsRoutes(app: FastifyInstance): Promise<void> {
     },
     preHandler: [jwtMiddleware],
   }, async (request, reply) => {
-    const usage = await app.handlers.getUsage.handle(request.tenantId!);
-    reply.send(new UsageResponse(usage));
+    const usage = await app.services.tenants.getUsage(request.tenantId!);
+    reply.send(UsageResponse.mapFromEntity(usage));
   });
 }

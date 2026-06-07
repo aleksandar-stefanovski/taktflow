@@ -22,4 +22,8 @@ export class UserResponse {
     this.createdAt = user.createdAt.toISOString();
     this.updatedAt = user.updatedAt.toISOString();
   }
+
+  static mapFromEntity(user: User): UserResponse {
+    return new UserResponse(user);
+  }
 }

@@ -3,13 +3,13 @@ import { createHash, timingSafeEqual } from 'crypto';
 import type { FastifyRequest, FastifyReply } from 'fastify';
 
 import { UnauthorizedException } from '@domain/exceptions/unauthorized-exception.js';
-import { PIPELINE_HEADERS } from '@types/header-constants.js';
+import { HTTP_CONSTANTS } from '@api/constants/http.constants.js';
 
 export async function apiKeyMiddleware(
   request: FastifyRequest,
   _reply: FastifyReply,
 ): Promise<void> {
-  const rawKey = request.headers[PIPELINE_HEADERS.API_KEY];
+  const rawKey = request.headers[HTTP_CONSTANTS.API_KEY_HEADER];
   if (typeof rawKey !== 'string' || rawKey.length === 0) {
     throw new UnauthorizedException('API key required');
   }

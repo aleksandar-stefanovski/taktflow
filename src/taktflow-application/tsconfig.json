@@ -5,15 +5,12 @@
     "outDir": "dist",
     "paths": {
       "@domain/*":         ["../taktflow-domain/*"],
-      "@types/*":          ["../../packages/taktflow-types/*"],
-      "@utils/*":          ["../../packages/taktflow-utils/*"],
       "@application/*":    ["./*"]
     }
   },
   "references": [
-    { "path": "../taktflow-domain" },
-    { "path": "../../packages/taktflow-types" }
+    { "path": "../taktflow-domain" }
   ],
-  "include": ["commands", "queries", "handlers", "requests", "responses", "validators", "mappers", "interfaces"],
+  "include": ["interfaces", "requests", "responses", "services", "validators", "helpers"],
   "exclude": ["node_modules", "dist"]
 }

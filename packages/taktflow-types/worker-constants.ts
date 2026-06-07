@@ -1,3 +1,0 @@
-export const MAX_PAYLOAD_SIZE_BYTES         = 262_144;
-export const MAX_RESPONSE_BODY_SIZE_BYTES   = 1_024;
-export const WORKER_STUCK_THRESHOLD_SECONDS = 60;

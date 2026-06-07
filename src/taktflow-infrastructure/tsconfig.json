@@ -6,16 +6,13 @@
     "paths": {
       "@domain/*":         ["../taktflow-domain/*"],
       "@persistence/*":    ["../taktflow-persistence/*"],
-      "@types/*":          ["../../packages/taktflow-types/*"],
-      "@utils/*":          ["../../packages/taktflow-utils/*"],
       "@infrastructure/*": ["./*"]
     }
   },
   "references": [
     { "path": "../taktflow-domain" },
-    { "path": "../taktflow-persistence" },
-    { "path": "../../packages/taktflow-types" }
+    { "path": "../taktflow-persistence" }
   ],
-  "include": ["persistence", "queue", "interfaces", "email"],
+  "include": ["auth", "email", "interfaces", "persistence", "queue", "constants"],
   "exclude": ["node_modules", "dist"]
 }

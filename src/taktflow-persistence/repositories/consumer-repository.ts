@@ -119,7 +119,7 @@ export class ConsumerRepository
       secret:      row.secret,
       environment: row.environment,
       status:      row.status as ConsumerStatus,
-      config:      row.config as Partial<ConsumerConfig>,
+      config:      row.config as ConsumerConfig,
       createdAt:   row.createdAt,
       updatedAt:   row.updatedAt,
     });

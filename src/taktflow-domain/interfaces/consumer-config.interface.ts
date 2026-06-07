@@ -1,8 +1,8 @@
 export interface ConsumerConfig {
-  timeoutSeconds:     number;
+  timeoutMs:          number;
   retryAttempts:      number;
   retryBackoff:       'exponential' | 'fixed' | 'linear';
-  retryInitialDelay:  number;
+  retryInitialDelayMs: number;
   alertAfterFailures: number;
   alertEmail:         string | null;
   maxConcurrent:      number;

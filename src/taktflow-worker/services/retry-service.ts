@@ -10,7 +10,7 @@ export class RetryService {
   }
 
   async releaseStuckDeliveries(): Promise<void> {
-    const released = await this.deps.deliveries.releaseStuckDeliveries(this.deps.config.stuckThresholdSeconds);
+    const released = await this.deps.deliveries.releaseStuckDeliveries(this.deps.config.stuckThresholdMs);
     if (released > 0) {
       this.deps.logger.logStuckEventsReleased(released);
     }
@@ -29,9 +29,8 @@ export class RetryService {
       return;
     }
 
-    const delays = this.deps.config.retryDelaysSeconds;
-    const delaySeconds = delays[delivery.retry_count] ?? delays[delays.length - 1] ?? 3600;
-    await this.deps.queue.scheduleRetry(delivery.id, delaySeconds);
-    this.deps.logger.logEventRetryScheduled(delivery.event_id, delaySeconds, delivery.retry_count);
+    const delayMs = this.deps.config.retryBaseDelayMs * Math.pow(2, delivery.retry_count);
+    await this.deps.queue.scheduleRetry(delivery.id, delayMs);
+    this.deps.logger.logEventRetryScheduled(delivery.event_id, delayMs, delivery.retry_count);
   }
 }

@@ -8,8 +8,8 @@ import {
 } from '@application/validators/user-validators.js';
 import { UserResponse } from '@application/responses/users/user.response.js';
 
-import { jwtMiddleware } from '../../../middleware/jwt-middleware.js';
-import { zodToJsonSchema, ErrorResponseSchema } from '../../../schemas/api-schemas.js';
+import { jwtMiddleware } from '@api/middleware/jwt-middleware.js';
+import { zodToJsonSchema, ErrorResponseSchema } from '@api/schemas/api-schemas.js';
 
 export async function usersRoutes(app: FastifyInstance): Promise<void> {
   app.post('/', {
@@ -28,11 +28,11 @@ export async function usersRoutes(app: FastifyInstance): Promise<void> {
     preHandler: [jwtMiddleware],
   }, async (request, reply) => {
     const body = CreateUserSchema.parse(request.body);
-    const user = await app.handlers.createUser.handle({
+    const user = await app.services.users.create({
       ...body,
       tenantId: request.tenantId!,
     });
-    reply.code(201).send(new UserResponse(user));
+    reply.code(201).send(UserResponse.mapFromEntity(user));
   });
 
   app.get('/me', {
@@ -47,11 +47,11 @@ export async function usersRoutes(app: FastifyInstance): Promise<void> {
     },
     preHandler: [jwtMiddleware],
   }, async (request, reply) => {
-    const user = await app.handlers.getCurrentUser.handle(
+    const user = await app.services.users.getCurrent(
       request.userId!,
       request.tenantId!,
     );
-    reply.send(new UserResponse(user));
+    reply.send(UserResponse.mapFromEntity(user));
   });
 
   app.put('/me', {
@@ -69,12 +69,12 @@ export async function usersRoutes(app: FastifyInstance): Promise<void> {
     preHandler: [jwtMiddleware],
   }, async (request, reply) => {
     const body = UpdateUserSchema.parse(request.body);
-    const user = await app.handlers.updateUser.handle({
+    const user = await app.services.users.update({
       ...body,
       userId:   request.userId!,
       tenantId: request.tenantId!,
     });
-    reply.send(new UserResponse(user));
+    reply.send(UserResponse.mapFromEntity(user));
   });
 
   app.put('/me/password', {
@@ -92,7 +92,7 @@ export async function usersRoutes(app: FastifyInstance): Promise<void> {
     preHandler: [jwtMiddleware],
   }, async (request, reply) => {
     const body = ChangePasswordSchema.parse(request.body);
-    await app.handlers.changePassword.handle({
+    await app.services.users.changePassword({
       ...body,
       userId:   request.userId!,
       tenantId: request.tenantId!,

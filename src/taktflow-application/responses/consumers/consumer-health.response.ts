@@ -1,4 +1,4 @@
-import type { ConsumerHealth } from '../../handlers/get-consumer-health-handler.js';
+import type { IConsumerHealth } from '../../interfaces/consumer-health.interface.js';
 
 export class ConsumerHealthResponse {
   readonly consumerId: string;
@@ -9,7 +9,7 @@ export class ConsumerHealthResponse {
   readonly failed:     number;
   readonly deadLetter: number;
 
-  constructor(health: ConsumerHealth) {
+  constructor(health: IConsumerHealth) {
     this.consumerId = health.consumerId;
     this.total      = health.total;
     this.pending    = health.pending;
@@ -17,5 +17,9 @@ export class ConsumerHealthResponse {
     this.delivered  = health.delivered;
     this.failed     = health.failed;
     this.deadLetter = health.deadLetter;
+  }
+
+  static mapFromEntity(health: IConsumerHealth): ConsumerHealthResponse {
+    return new ConsumerHealthResponse(health);
   }
 }

@@ -23,4 +23,8 @@ export class CreatePushConsumerResponse {
     this.config      = consumer.config;
     this.createdAt   = consumer.createdAt.toISOString();
   }
+
+  static mapFromEntity(consumer: Consumer): CreatePushConsumerResponse {
+    return new CreatePushConsumerResponse(consumer);
+  }
 }

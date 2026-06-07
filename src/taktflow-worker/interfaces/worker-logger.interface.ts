@@ -6,7 +6,7 @@ export interface IWorkerLogger {
   logDeliveryFailed(eventId: string, consumerId: string, reason: string, attempt: number): void;
   logDeliveryTimedOut(eventId: string, consumerId: string, timeoutMs: number): void;
   logEventMovedToDeadLetter(eventId: string, consumerId: string, reason: string): void;
-  logEventRetryScheduled(eventId: string, delaySeconds: number, attempt: number): void;
+  logEventRetryScheduled(eventId: string, delayMs: number, attempt: number): void;
   logStuckEventsReleased(count: number): void;
   logSchedulerFired(scheduleId: string, topicId: string, cron: string): void;
   logSchedulerError(scheduleId: string, error: Error): void;

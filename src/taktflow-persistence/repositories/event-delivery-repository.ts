@@ -105,7 +105,7 @@ export class EventDeliveryRepository
       ));
   }
 
-  async releaseStuckDeliveries(stuckThresholdSeconds: number): Promise<number> {
+  async releaseStuckDeliveries(stuckThresholdMs: number): Promise<number> {
     const result = await this.db
       .update(eventDeliveries)
       .set({
@@ -115,7 +115,7 @@ export class EventDeliveryRepository
       })
       .where(and(
         eq(eventDeliveries.status, 'processing'),
-        sql`${eventDeliveries.startedAt} < NOW() - (${stuckThresholdSeconds} * INTERVAL '1 second')`,
+        sql`${eventDeliveries.startedAt} < NOW() - (${stuckThresholdMs} * INTERVAL '1 millisecond')`,
       ))
       .returning({ id: eventDeliveries.id });
 

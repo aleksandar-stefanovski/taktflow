@@ -8,7 +8,6 @@
       "@persistence/*":    ["../taktflow-persistence/*"],
       "@infrastructure/*": ["../taktflow-infrastructure/*"],
       "@application/*":    ["../taktflow-application/*"],
-      "@types/*":          ["../../packages/taktflow-types/*"],
       "@utils/*":          ["../../packages/taktflow-utils/*"],
       "@api/*":            ["./*"]
     }
@@ -18,9 +17,8 @@
     { "path": "../taktflow-persistence" },
     { "path": "../taktflow-application" },
     { "path": "../taktflow-infrastructure" },
-    { "path": "../../packages/taktflow-types" },
     { "path": "../../packages/taktflow-utils" }
   ],
-  "include": ["routes", "base", "middleware", "plugins", "extensions", "interfaces", "config", "infrastructure", "app.ts", "server.ts"],
+  "include": ["routes", "base", "middleware", "plugins", "extensions", "interfaces", "config", "schemas", "constants", "app.ts", "server.ts"],
   "exclude": ["node_modules", "dist"]
 }

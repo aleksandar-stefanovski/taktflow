@@ -5,7 +5,8 @@ import type { DrizzleDb } from '../database.js';
 import { deadLetterEvents } from '../schema/dead-letter-events.js';
 import type { DeadLetterEventRow } from '../schema/dead-letter-events.js';
 import { DeadLetterEvent } from '@domain/entities/dead-letter-event.js';
-import type { IDeadLetterEventRepository, FailureAlertRow } from '@domain/interfaces/dead-letter-event-repository.interface.js';
+import type { IDeadLetterEventRepository } from '@domain/interfaces/dead-letter-event-repository.interface.js';
+import type { FailureAlertRow } from '@domain/interfaces/failure-alert-row.interface.js';
 import { BaseTenantRepository } from './base-tenant-repository.js';
 
 export class DeadLetterEventRepository

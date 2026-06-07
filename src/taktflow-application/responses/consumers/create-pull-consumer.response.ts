@@ -21,4 +21,8 @@ export class CreatePullConsumerResponse {
     this.config      = consumer.config;
     this.createdAt   = consumer.createdAt.toISOString();
   }
+
+  static mapFromEntity(consumer: Consumer): CreatePullConsumerResponse {
+    return new CreatePullConsumerResponse(consumer);
+  }
 }

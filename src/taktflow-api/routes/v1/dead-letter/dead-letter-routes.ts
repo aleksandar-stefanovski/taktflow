@@ -1,11 +1,11 @@
 import type { FastifyInstance } from 'fastify';
 
 import { ListDeadLetterEventsResponseSchema } from '@application/validators/dead-letter-validators.js';
-import { PaginationSchema } from '@application/validators/pagination-validators.js';
-import { ListDeadLetterEventsResponse } from '@application/responses/dead-letter/dead-letter-event.response.js';
+import { PaginationSchema } from '@api/schemas/pagination-schema.js';
+import { DeadLetterEventResponse } from '@application/responses/dead-letter/dead-letter-event.response.js';
 
-import { jwtMiddleware } from '../../../middleware/jwt-middleware.js';
-import { zodToJsonSchema, ErrorResponseSchema } from '../../../schemas/api-schemas.js';
+import { jwtMiddleware } from '@api/middleware/jwt-middleware.js';
+import { zodToJsonSchema, ErrorResponseSchema } from '@api/schemas/api-schemas.js';
 
 export async function deadLetterRoutes(app: FastifyInstance): Promise<void> {
   app.get('/', {
@@ -22,11 +22,11 @@ export async function deadLetterRoutes(app: FastifyInstance): Promise<void> {
     preHandler: [jwtMiddleware],
   }, async (request, reply) => {
     const query  = PaginationSchema.parse(request.query);
-    const result = await app.handlers.listDeadLetterEvents.handle({
+    const result = await app.services.deadLetter.list({
       ...query,
       tenantId: request.tenantId!,
     });
-    reply.send(new ListDeadLetterEventsResponse(result));
+    reply.send({ ...result, items: result.items.map(DeadLetterEventResponse.mapFromEntity) });
   });
 
   app.post('/:id/replay', {
@@ -44,7 +44,7 @@ export async function deadLetterRoutes(app: FastifyInstance): Promise<void> {
     preHandler: [jwtMiddleware],
   }, async (request, reply) => {
     const { id } = request.params as { id: string };
-    await app.handlers.replayDeadLetterEvent.handle(id, request.tenantId!);
+    await app.services.deadLetter.replay(id, request.tenantId!);
     reply.code(204).send();
   });
 }

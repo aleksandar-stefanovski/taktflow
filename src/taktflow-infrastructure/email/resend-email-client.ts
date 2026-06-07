@@ -1,10 +1,8 @@
 import { Resend } from 'resend';
 
-import type {
-  IEmailClient,
-  FailureAlertParams,
-  ApproachingLimitParams,
-} from '../interfaces/email-client.interface.js';
+import type { IEmailClient } from '../interfaces/email-client.interface.js';
+import type { FailureAlertParams } from '../interfaces/failure-alert-params.interface.js';
+import type { ApproachingLimitParams } from '../interfaces/approaching-limit-params.interface.js';
 
 export class ResendEmailClient implements IEmailClient {
   private readonly client: Resend;

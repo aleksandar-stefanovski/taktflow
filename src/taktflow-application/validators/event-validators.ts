@@ -1,15 +1,10 @@
 import { z } from 'zod';
 
-import { MAX_PAYLOAD_SIZE_BYTES } from '@types/worker-constants.js';
-
 import { PaginationSchema, paginatedResponseSchema } from './pagination-validators.js';
 
 export const ProduceEventSchema = z.object({
   topicId:        z.string().uuid(),
-  payload:        z.record(z.unknown()).refine(
-    (payload) => JSON.stringify(payload).length <= MAX_PAYLOAD_SIZE_BYTES,
-    { message: 'Payload exceeds 256KB limit' },
-  ),
+  payload:        z.record(z.unknown()),
   idempotencyKey: z.string().uuid().optional(),
 });
 

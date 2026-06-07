@@ -5,12 +5,12 @@ import {
   CreateScheduleResponseSchema,
   ListSchedulesResponseSchema,
 } from '@application/validators/schedule-validators.js';
-import { PaginationSchema } from '@application/validators/pagination-validators.js';
-import { ScheduleMapper } from '@application/mappers/schedule-mapper.js';
+import { PaginationSchema } from '@api/schemas/pagination-schema.js';
 import { CreateScheduleResponse } from '@application/responses/schedules/create-schedule.response.js';
+import { ScheduleSummaryResponse } from '@application/responses/schedules/schedule-summary.response.js';
 
-import { jwtMiddleware } from '../../../middleware/jwt-middleware.js';
-import { zodToJsonSchema, ErrorResponseSchema } from '../../../schemas/api-schemas.js';
+import { jwtMiddleware } from '@api/middleware/jwt-middleware.js';
+import { zodToJsonSchema, ErrorResponseSchema } from '@api/schemas/api-schemas.js';
 
 export async function schedulesRoutes(app: FastifyInstance): Promise<void> {
   app.post('/', {
@@ -28,11 +28,11 @@ export async function schedulesRoutes(app: FastifyInstance): Promise<void> {
     preHandler: [jwtMiddleware],
   }, async (request, reply) => {
     const body     = CreateScheduleSchema.parse(request.body);
-    const schedule = await app.handlers.createSchedule.handle({
+    const schedule = await app.services.schedules.create({
       ...body,
       tenantId: request.tenantId!,
     });
-    reply.code(201).send(new CreateScheduleResponse(schedule));
+    reply.code(201).send(CreateScheduleResponse.mapFromEntity(schedule));
   });
 
   app.get('/', {
@@ -49,10 +49,10 @@ export async function schedulesRoutes(app: FastifyInstance): Promise<void> {
     preHandler: [jwtMiddleware],
   }, async (request, reply) => {
     const query  = PaginationSchema.parse(request.query);
-    const result = await app.handlers.listSchedules.handle({
+    const result = await app.services.schedules.list({
       ...query,
       tenantId: request.tenantId!,
     });
-    reply.send(ScheduleMapper.toListResponse(result));
+    reply.send({ ...result, items: result.items.map(ScheduleSummaryResponse.mapFromEntity) });
   });
 }

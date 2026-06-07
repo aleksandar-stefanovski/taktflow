@@ -7,10 +7,11 @@ import {
   RefreshTokenResponseSchema,
 } from '@application/validators/auth-validators.js';
 import { RegisterTenantSchema } from '@application/validators/tenant-validators.js';
-import { LoginResponse, RefreshTokenResponse } from '@application/responses/auth/login.response.js';
+import { LoginResponse } from '@application/responses/auth/login.response.js';
+import { RefreshTokenResponse } from '@application/responses/auth/refresh-token.response.js';
 
-import { jwtMiddleware } from '../../../middleware/jwt-middleware.js';
-import { zodToJsonSchema, ErrorResponseSchema } from '../../../schemas/api-schemas.js';
+import { jwtMiddleware } from '@api/middleware/jwt-middleware.js';
+import { zodToJsonSchema, ErrorResponseSchema } from '@api/schemas/api-schemas.js';
 
 export async function authRoutes(app: FastifyInstance): Promise<void> {
   app.post('/register', {
@@ -28,8 +29,8 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
     },
   }, async (request, reply) => {
     const body   = RegisterTenantSchema.parse(request.body);
-    const result = await app.handlers.registerTenant.handle(body);
-    reply.code(201).send(new LoginResponse(result));
+    const result = await app.services.auth.register(body);
+    reply.code(201).send(LoginResponse.mapFromEntity(result));
   });
 
   app.post('/login', {
@@ -47,8 +48,8 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
     },
   }, async (request, reply) => {
     const body   = LoginSchema.parse(request.body);
-    const result = await app.handlers.login.handle(body);
-    reply.send(new LoginResponse(result));
+    const result = await app.services.auth.login(body);
+    reply.send(LoginResponse.mapFromEntity(result));
   });
 
   app.post('/refresh', {
@@ -66,8 +67,8 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
     },
   }, async (request, reply) => {
     const body   = RefreshTokenSchema.parse(request.body);
-    const result = await app.handlers.refresh.handle(body);
-    reply.send(new RefreshTokenResponse(result));
+    const result = await app.services.auth.refresh(body);
+    reply.send(RefreshTokenResponse.mapFromEntity(result));
   });
 
   app.post('/logout', {
@@ -81,7 +82,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
     },
     preHandler: [jwtMiddleware],
   }, async (request, reply) => {
-    await app.handlers.logout.handle({
+    await app.services.auth.logout({
       userId:   request.userId!,
       tenantId: request.tenantId!,
     });

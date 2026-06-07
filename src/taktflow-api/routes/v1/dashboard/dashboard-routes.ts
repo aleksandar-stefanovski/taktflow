@@ -3,8 +3,8 @@ import type { FastifyInstance } from 'fastify';
 import { DashboardMetricsResponseSchema } from '@application/validators/dashboard-validators.js';
 import { DashboardMetricsResponse } from '@application/responses/metrics/dashboard-metrics.response.js';
 
-import { jwtMiddleware } from '../../../middleware/jwt-middleware.js';
-import { zodToJsonSchema, ErrorResponseSchema } from '../../../schemas/api-schemas.js';
+import { jwtMiddleware } from '@api/middleware/jwt-middleware.js';
+import { zodToJsonSchema, ErrorResponseSchema } from '@api/schemas/api-schemas.js';
 
 export async function dashboardRoutes(app: FastifyInstance): Promise<void> {
   app.get('/metrics', {
@@ -19,7 +19,7 @@ export async function dashboardRoutes(app: FastifyInstance): Promise<void> {
     },
     preHandler: [jwtMiddleware],
   }, async (request, reply) => {
-    const metrics = await app.handlers.getDashboardMetrics.handle(request.tenantId!);
-    reply.send(new DashboardMetricsResponse(metrics));
+    const metrics = await app.services.dashboard.getMetrics(request.tenantId!);
+    reply.send(DashboardMetricsResponse.mapFromEntity(metrics));
   });
 }

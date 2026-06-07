@@ -20,4 +20,8 @@ export class CreateScheduleResponse {
     this.nextRun     = schedule.nextRun?.toISOString() ?? null;
     this.createdAt   = schedule.createdAt.toISOString();
   }
+
+  static mapFromEntity(schedule: Schedule): CreateScheduleResponse {
+    return new CreateScheduleResponse(schedule);
+  }
 }

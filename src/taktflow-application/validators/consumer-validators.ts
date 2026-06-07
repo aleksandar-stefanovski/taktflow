@@ -18,10 +18,10 @@ export const CreatePullConsumerSchema = z.object({
 });
 
 const ConsumerConfigSchema = z.object({
-  timeoutSeconds:     z.number().int(),
+  timeoutMs:          z.number().int(),
   retryAttempts:      z.number().int(),
   retryBackoff:       z.string(),
-  retryInitialDelay:  z.number().int(),
+  retryInitialDelayMs: z.number().int(),
   alertAfterFailures: z.number().int(),
   alertEmail:         z.string().nullable(),
   maxConcurrent:      z.number().int(),

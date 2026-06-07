@@ -5,5 +5,5 @@ export interface IEventDeliveryRepository extends ITenantRepository<EventDeliver
   findByEventId(eventId: string, tenantId: string): Promise<EventDelivery[]>;
   findByConsumerId(consumerId: string, tenantId: string): Promise<EventDelivery[]>;
   resetTimedOutAcks(awaitingAckTimeoutHours: number): Promise<void>;
-  releaseStuckDeliveries(stuckThresholdSeconds: number): Promise<number>;
+  releaseStuckDeliveries(stuckThresholdMs: number): Promise<number>;
 }

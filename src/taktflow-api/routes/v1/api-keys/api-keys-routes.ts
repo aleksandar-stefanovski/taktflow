@@ -6,11 +6,12 @@ import {
   GetApiKeyResponseSchema,
   ListApiKeysResponseSchema,
 } from '@application/validators/api-key-validators.js';
-import { PaginationSchema } from '@application/validators/pagination-validators.js';
-import { ApiKeyMapper } from '@application/mappers/api-key-mapper.js';
+import { PaginationSchema } from '@api/schemas/pagination-schema.js';
+import { CreateApiKeyResponse } from '@application/responses/api-keys/create-api-key.response.js';
+import { ApiKeyResponse } from '@application/responses/api-keys/api-key.response.js';
 
-import { jwtMiddleware } from '../../../middleware/jwt-middleware.js';
-import { zodToJsonSchema, ErrorResponseSchema } from '../../../schemas/api-schemas.js';
+import { jwtMiddleware } from '@api/middleware/jwt-middleware.js';
+import { zodToJsonSchema, ErrorResponseSchema } from '@api/schemas/api-schemas.js';
 
 export async function apiKeysRoutes(app: FastifyInstance): Promise<void> {
   app.post('/', {
@@ -28,11 +29,11 @@ export async function apiKeysRoutes(app: FastifyInstance): Promise<void> {
     preHandler: [jwtMiddleware],
   }, async (request, reply) => {
     const body   = CreateApiKeySchema.parse(request.body);
-    const result = await app.handlers.createApiKey.handle({
+    const result = await app.services.apiKey.create({
       ...body,
       tenantId: request.tenantId!,
     });
-    reply.code(201).send(ApiKeyMapper.toCreateResponse(result.apiKey, result.rawKey));
+    reply.code(201).send(CreateApiKeyResponse.mapFromEntity(result.apiKey, result.rawKey));
   });
 
   app.get('/', {
@@ -49,11 +50,11 @@ export async function apiKeysRoutes(app: FastifyInstance): Promise<void> {
     preHandler: [jwtMiddleware],
   }, async (request, reply) => {
     const query  = PaginationSchema.parse(request.query);
-    const result = await app.handlers.listApiKeys.handle({
+    const result = await app.services.apiKey.list({
       ...query,
       tenantId: request.tenantId!,
     });
-    reply.send(ApiKeyMapper.toListResponse(result));
+    reply.send({ ...result, items: result.items.map(ApiKeyResponse.mapFromEntity) });
   });
 
   app.get('/:id', {
@@ -71,8 +72,8 @@ export async function apiKeysRoutes(app: FastifyInstance): Promise<void> {
     preHandler: [jwtMiddleware],
   }, async (request, reply) => {
     const { id } = request.params as { id: string };
-    const apiKey = await app.handlers.getApiKey.handle(id, request.tenantId!);
-    reply.send(ApiKeyMapper.toDetailResponse(apiKey));
+    const apiKey = await app.services.apiKey.getById(id, request.tenantId!);
+    reply.send(ApiKeyResponse.mapFromEntity(apiKey));
   });
 
   app.delete('/:id', {
@@ -90,7 +91,7 @@ export async function apiKeysRoutes(app: FastifyInstance): Promise<void> {
     preHandler: [jwtMiddleware],
   }, async (request, reply) => {
     const { id } = request.params as { id: string };
-    await app.handlers.deleteApiKey.handle(id, request.tenantId!);
+    await app.services.apiKey.delete(id, request.tenantId!);
     reply.code(204).send();
   });
 }

@@ -1,15 +1,17 @@
-import 'dotenv/config';
+import { config } from 'dotenv';
+config({ path: '.env.local' });
 
 import { connectDatabase, runMigrations } from '@persistence/database.js';
-import { env } from './config/env.js';
+import { databaseConfig } from './config/database.config.js';
+import { serverConfig }   from './config/server.config.js';
 import { buildApp } from './app.js';
 
 async function bootstrap(): Promise<void> {
-  const db  = await connectDatabase(env.DATABASE_URL);
+  const db  = await connectDatabase(databaseConfig.DATABASE_URL);
   await runMigrations(db);
   const app = await buildApp(db);
 
-  await app.listen({ port: env.PORT, host: '0.0.0.0' });
+  await app.listen({ port: serverConfig.PORT, host: '0.0.0.0' });
 
   const shutdown = async (): Promise<void> => {
     await app.close();

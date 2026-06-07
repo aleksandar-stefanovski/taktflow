@@ -1,13 +1,4 @@
-export interface QueuedEvent {
-  id: string;
-  eventId: string;
-  tenantId: string;
-  topicId: string;
-  consumerId: string;
-  payload: Record<string, unknown>;
-  attempt: number;
-  scheduledAt: Date;
-}
+import type { QueuedEvent } from './queued-event.interface.js';
 
 export interface IQueueEngine {
   enqueue(event: QueuedEvent): Promise<void>;
@@ -16,6 +7,6 @@ export interface IQueueEngine {
   acknowledge(deliveryId: string): Promise<void>;
   markAwaitingAck(deliveryId: string): Promise<void>;
   releaseToPending(deliveryId: string): Promise<void>;
-  scheduleRetry(deliveryId: string, delaySeconds: number): Promise<void>;
+  scheduleRetry(deliveryId: string, delayMs: number): Promise<void>;
   moveToDeadLetter(deliveryId: string, reason: string): Promise<void>;
 }

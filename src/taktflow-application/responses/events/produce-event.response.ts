@@ -14,4 +14,8 @@ export class ProduceEventResponse {
     this.source    = event.source;
     this.createdAt = event.createdAt.toISOString();
   }
+
+  static mapFromEntity(event: Event): ProduceEventResponse {
+    return new ProduceEventResponse(event);
+  }
 }

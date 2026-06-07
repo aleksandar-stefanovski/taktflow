@@ -11,15 +11,15 @@ import {
   ListConsumersResponseSchema,
   ConsumerHealthResponseSchema,
 } from '@application/validators/consumer-validators.js';
-import { PaginationSchema } from '@application/validators/pagination-validators.js';
-import { ConsumerMapper } from '@application/mappers/consumer-mapper.js';
+import { PaginationSchema } from '@api/schemas/pagination-schema.js';
 import { CreatePushConsumerResponse } from '@application/responses/consumers/create-push-consumer.response.js';
 import { CreatePullConsumerResponse } from '@application/responses/consumers/create-pull-consumer.response.js';
 import { ConsumerDetailResponse } from '@application/responses/consumers/consumer-detail.response.js';
 import { ConsumerHealthResponse } from '@application/responses/consumers/consumer-health.response.js';
+import { ConsumerSummaryResponse } from '@application/responses/consumers/consumer-summary.response.js';
 
-import { jwtMiddleware } from '../../../middleware/jwt-middleware.js';
-import { zodToJsonSchema, ErrorResponseSchema } from '../../../schemas/api-schemas.js';
+import { jwtMiddleware } from '@api/middleware/jwt-middleware.js';
+import { zodToJsonSchema, ErrorResponseSchema } from '@api/schemas/api-schemas.js';
 
 const ListConsumersQuerySchema = PaginationSchema.extend({
   topicId: z.string().uuid().optional(),
@@ -44,11 +44,11 @@ export async function consumersRoutes(app: FastifyInstance): Promise<void> {
     preHandler: [jwtMiddleware],
   }, async (request, reply) => {
     const body     = CreatePushConsumerSchema.parse(request.body);
-    const consumer = await app.handlers.createPushConsumer.handle({
+    const consumer = await app.services.consumers.createPush({
       ...body,
       tenantId: request.tenantId!,
     });
-    reply.code(201).send(new CreatePushConsumerResponse(consumer));
+    reply.code(201).send(CreatePushConsumerResponse.mapFromEntity(consumer));
   });
 
   app.post('/pull', {
@@ -67,11 +67,11 @@ export async function consumersRoutes(app: FastifyInstance): Promise<void> {
     preHandler: [jwtMiddleware],
   }, async (request, reply) => {
     const body     = CreatePullConsumerSchema.parse(request.body);
-    const consumer = await app.handlers.createPullConsumer.handle({
+    const consumer = await app.services.consumers.createPull({
       ...body,
       tenantId: request.tenantId!,
     });
-    reply.code(201).send(new CreatePullConsumerResponse(consumer));
+    reply.code(201).send(CreatePullConsumerResponse.mapFromEntity(consumer));
   });
 
   app.get('/', {
@@ -88,11 +88,11 @@ export async function consumersRoutes(app: FastifyInstance): Promise<void> {
     preHandler: [jwtMiddleware],
   }, async (request, reply) => {
     const query  = ListConsumersQuerySchema.parse(request.query);
-    const result = await app.handlers.listConsumers.handle({
+    const result = await app.services.consumers.list({
       ...query,
       tenantId: request.tenantId!,
     });
-    reply.send(ConsumerMapper.toListResponse(result));
+    reply.send({ ...result, items: result.items.map(ConsumerSummaryResponse.mapFromEntity) });
   });
 
   app.get('/:id', {
@@ -109,9 +109,9 @@ export async function consumersRoutes(app: FastifyInstance): Promise<void> {
     },
     preHandler: [jwtMiddleware],
   }, async (request, reply) => {
-    const { id } = request.params as { id: string };
-    const consumer = await app.handlers.getConsumer.handle(id, request.tenantId!);
-    reply.send(new ConsumerDetailResponse(consumer));
+    const { id }   = request.params as { id: string };
+    const consumer = await app.services.consumers.getById(id, request.tenantId!);
+    reply.send(ConsumerDetailResponse.mapFromEntity(consumer));
   });
 
   app.put('/:id', {
@@ -130,13 +130,13 @@ export async function consumersRoutes(app: FastifyInstance): Promise<void> {
     },
     preHandler: [jwtMiddleware],
   }, async (request, reply) => {
-    const { id } = request.params as { id: string };
-    const body    = UpdateConsumerSchema.parse(request.body);
-    const consumer = await app.handlers.updateConsumer.handle(id, {
+    const { id }   = request.params as { id: string };
+    const body     = UpdateConsumerSchema.parse(request.body);
+    const consumer = await app.services.consumers.update(id, {
       ...body,
       tenantId: request.tenantId!,
     });
-    reply.send(new ConsumerDetailResponse(consumer));
+    reply.send(ConsumerDetailResponse.mapFromEntity(consumer));
   });
 
   app.delete('/:id', {
@@ -154,7 +154,7 @@ export async function consumersRoutes(app: FastifyInstance): Promise<void> {
     preHandler: [jwtMiddleware],
   }, async (request, reply) => {
     const { id } = request.params as { id: string };
-    await app.handlers.deleteConsumer.handle(id, request.tenantId!);
+    await app.services.consumers.delete(id, request.tenantId!);
     reply.code(204).send();
   });
 
@@ -172,9 +172,9 @@ export async function consumersRoutes(app: FastifyInstance): Promise<void> {
     },
     preHandler: [jwtMiddleware],
   }, async (request, reply) => {
-    const { id } = request.params as { id: string };
-    const consumer = await app.handlers.pauseConsumer.handle(id, request.tenantId!);
-    reply.send(new ConsumerDetailResponse(consumer));
+    const { id }   = request.params as { id: string };
+    const consumer = await app.services.consumers.pause(id, request.tenantId!);
+    reply.send(ConsumerDetailResponse.mapFromEntity(consumer));
   });
 
   app.post('/:id/resume', {
@@ -191,9 +191,9 @@ export async function consumersRoutes(app: FastifyInstance): Promise<void> {
     },
     preHandler: [jwtMiddleware],
   }, async (request, reply) => {
-    const { id } = request.params as { id: string };
-    const consumer = await app.handlers.resumeConsumer.handle(id, request.tenantId!);
-    reply.send(new ConsumerDetailResponse(consumer));
+    const { id }   = request.params as { id: string };
+    const consumer = await app.services.consumers.resume(id, request.tenantId!);
+    reply.send(ConsumerDetailResponse.mapFromEntity(consumer));
   });
 
   app.get('/:id/health', {
@@ -211,7 +211,7 @@ export async function consumersRoutes(app: FastifyInstance): Promise<void> {
     preHandler: [jwtMiddleware],
   }, async (request, reply) => {
     const { id } = request.params as { id: string };
-    const health = await app.handlers.getConsumerHealth.handle(id, request.tenantId!);
-    reply.send(new ConsumerHealthResponse(health));
+    const health = await app.services.consumers.getHealth(id, request.tenantId!);
+    reply.send(ConsumerHealthResponse.mapFromEntity(health));
   });
 }

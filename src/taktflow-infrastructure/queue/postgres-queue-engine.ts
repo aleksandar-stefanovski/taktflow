@@ -1,4 +1,5 @@
-import type { IQueueEngine, QueuedEvent } from '../interfaces/queue-engine.interface.js';
+import type { IQueueEngine } from '../interfaces/queue-engine.interface.js';
+import type { QueuedEvent } from '../interfaces/queued-event.interface.js';
 import type { IDatabasePool } from '../interfaces/database-pool.interface.js';
 import type { IPoolClient } from '../interfaces/pool-client.interface.js';
 import type { DeliveryRow } from '../interfaces/delivery-row.interface.js';
@@ -144,15 +145,15 @@ export class PostgresQueueEngine implements IQueueEngine {
     );
   }
 
-  async scheduleRetry(deliveryId: string, delaySeconds: number): Promise<void> {
+  async scheduleRetry(deliveryId: string, delayMs: number): Promise<void> {
     await this.pool.query(
       `UPDATE event_deliveries
        SET status = 'pending',
-           scheduled_at = NOW() + ($2 * INTERVAL '1 second'),
+           scheduled_at = NOW() + ($2 * INTERVAL '1 millisecond'),
            retry_count = retry_count + 1,
            updated_at = NOW()
        WHERE id = $1`,
-      [deliveryId, delaySeconds],
+      [deliveryId, delayMs],
     );
   }
 
