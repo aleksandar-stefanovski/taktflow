@@ -1,28 +1,46 @@
-import { and, eq, sql } from 'drizzle-orm';
-import type { PgTableWithColumns, TableConfig } from 'drizzle-orm/pg-core';
+import { and, eq, sql, type SQL } from 'drizzle-orm';
 
 import type { DrizzleDb } from '../database.js';
 import { eventDeliveries } from '../schema/event-deliveries.js';
 import type { EventDeliveryRow } from '../schema/event-deliveries.js';
 import { EventDelivery } from '@domain/entities/event-delivery.js';
-import type { DeliveryStatus } from '@domain/entities/event-delivery.js';
 import type { IEventDeliveryRepository } from '@domain/interfaces/event-delivery-repository.interface.js';
-import { BaseTenantRepository } from './base-tenant-repository.js';
+import type { ICurrentTenantProvider } from '@domain/interfaces/current-tenant-provider.interface.js';
+import { EventDeliveryReadonlyRepository } from './readonly/event-delivery-readonly-repository.js';
+import { EntityBaseRepository } from './entity-base-repository.js';
 
 export class EventDeliveryRepository
-  extends BaseTenantRepository<EventDelivery>
+  extends EntityBaseRepository<EventDelivery>
   implements IEventDeliveryRepository {
 
-  constructor(db: DrizzleDb) {
-    super(db);
+  constructor(db: DrizzleDb, tenantProvider: ICurrentTenantProvider) {
+    super(db, eventDeliveries, tenantProvider);
   }
 
-  protected get table(): PgTableWithColumns<TableConfig> {
-    return eventDeliveries as unknown as PgTableWithColumns<TableConfig>;
+  protected override requiredFilters(): SQL {
+    return eq(this.table['tenantId']!, this.tenantId);
   }
 
   protected mapToDomain(row: Record<string, unknown>): EventDelivery {
-    return EventDeliveryRepository.toDomain(row as EventDeliveryRow);
+    return EventDeliveryReadonlyRepository.toDomain(row as EventDeliveryRow);
+  }
+
+  async findByEventId(eventId: string): Promise<EventDelivery[]> {
+    const rows = await this.db
+      .select()
+      .from(eventDeliveries)
+      .where(and(eq(eventDeliveries.eventId, eventId), eq(eventDeliveries.tenantId, this.tenantId)));
+
+    return rows.map(EventDeliveryReadonlyRepository.toDomain);
+  }
+
+  async findByConsumerId(consumerId: string): Promise<EventDelivery[]> {
+    const rows = await this.db
+      .select()
+      .from(eventDeliveries)
+      .where(and(eq(eventDeliveries.consumerId, consumerId), eq(eventDeliveries.tenantId, this.tenantId)));
+
+    return rows.map(EventDeliveryReadonlyRepository.toDomain);
   }
 
   async create(entity: EventDelivery): Promise<EventDelivery> {
@@ -30,7 +48,7 @@ export class EventDeliveryRepository
       .insert(eventDeliveries)
       .values({
         id:             entity.id,
-        tenantId:       entity.tenantId,
+        tenantId:       entity.key.tenantId!,
         eventId:        entity.eventId,
         consumerId:     entity.consumerId,
         status:         entity.status,
@@ -48,10 +66,10 @@ export class EventDeliveryRepository
 
     const [row] = rows;
     if (!row) throw new Error('Insert returned no rows');
-    return EventDeliveryRepository.toDomain(row);
+    return EventDeliveryReadonlyRepository.toDomain(row);
   }
 
-  async update(id: string, tenantId: string, updates: Partial<EventDelivery>): Promise<EventDelivery> {
+  async update(id: string, updates: Partial<EventDelivery>): Promise<EventDelivery> {
     const rows = await this.db
       .update(eventDeliveries)
       .set({
@@ -64,30 +82,18 @@ export class EventDeliveryRepository
         ...(updates.errorMessage !== undefined && { errorMessage: updates.errorMessage }),
         updatedAt: new Date(),
       })
-      .where(and(eq(eventDeliveries.id, id), eq(eventDeliveries.tenantId, tenantId)))
+      .where(and(eq(eventDeliveries.id, id), eq(eventDeliveries.tenantId, this.tenantId)))
       .returning();
 
     const [row] = rows;
     if (!row) throw new Error('Update returned no rows');
-    return EventDeliveryRepository.toDomain(row);
+    return EventDeliveryReadonlyRepository.toDomain(row);
   }
 
-  async findByEventId(eventId: string, tenantId: string): Promise<EventDelivery[]> {
-    const rows = await this.db
-      .select()
-      .from(eventDeliveries)
-      .where(and(eq(eventDeliveries.eventId, eventId), eq(eventDeliveries.tenantId, tenantId)));
-
-    return rows.map(EventDeliveryRepository.toDomain);
-  }
-
-  async findByConsumerId(consumerId: string, tenantId: string): Promise<EventDelivery[]> {
-    const rows = await this.db
-      .select()
-      .from(eventDeliveries)
-      .where(and(eq(eventDeliveries.consumerId, consumerId), eq(eventDeliveries.tenantId, tenantId)));
-
-    return rows.map(EventDeliveryRepository.toDomain);
+  override async delete(id: string): Promise<void> {
+    await this.db
+      .delete(eventDeliveries)
+      .where(and(eq(eventDeliveries.id, id), eq(eventDeliveries.tenantId, this.tenantId)));
   }
 
   async resetTimedOutAcks(awaitingAckTimeoutHours: number): Promise<void> {
@@ -120,24 +126,5 @@ export class EventDeliveryRepository
       .returning({ id: eventDeliveries.id });
 
     return result.length;
-  }
-
-  static toDomain(row: EventDeliveryRow): EventDelivery {
-    return new EventDelivery({
-      id:             row.id,
-      tenantId:       row.tenantId,
-      eventId:        row.eventId,
-      consumerId:     row.consumerId,
-      status:         row.status as DeliveryStatus,
-      retryCount:     row.retryCount,
-      scheduledAt:    row.scheduledAt,
-      startedAt:      row.startedAt ?? null,
-      deliveredAt:    row.deliveredAt ?? null,
-      responseStatus: row.responseStatus ?? null,
-      responseBody:   row.responseBody ?? null,
-      errorMessage:   row.errorMessage ?? null,
-      createdAt:      row.createdAt,
-      updatedAt:      row.updatedAt,
-    });
   }
 }

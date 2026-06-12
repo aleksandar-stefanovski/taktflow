@@ -1,9 +1,10 @@
-import { createHash, randomUUID } from 'crypto';
+import { createHash, randomUUID } from 'node:crypto';
 
 import type { IEventRepository } from '@domain/interfaces/event-repository.interface.js';
 import type { ITopicRepository } from '@domain/interfaces/topic-repository.interface.js';
 import type { IConsumerRepository } from '@domain/interfaces/consumer-repository.interface.js';
 import { Event } from '@domain/entities/event.js';
+import { EntityKey } from '@domain/entities/entity-key.js';
 import { NotFoundException } from '@domain/exceptions/not-found-exception.js';
 
 import { canonicalJson } from '@application/helpers/canonical-json.helper.js';
@@ -26,14 +27,11 @@ export class EventService {
   async produce(request: ProduceEventRequest & { tenantId: string }): Promise<Event> {
     await this.usage.assertWithinLimit(request.tenantId, 1);
 
-    const topic = await this.topics.findById(request.topicId, request.tenantId);
+    const topic = await this.topics.findById(request.topicId);
     if (!topic) throw new NotFoundException('Topic', request.topicId);
 
     if (request.idempotencyKey) {
-      const existing = await this.events.findByIdempotencyKey(
-        request.idempotencyKey,
-        request.tenantId,
-      );
+      const existing = await this.events.findByIdempotencyKey(request.idempotencyKey);
       if (existing) return existing;
     }
 
@@ -42,7 +40,7 @@ export class EventService {
       .digest('hex');
 
     const event = new Event({
-      tenantId:       request.tenantId,
+      key:            new EntityKey(request.tenantId),
       topicId:        topic.id,
       payload:        request.payload,
       checksum,
@@ -52,11 +50,7 @@ export class EventService {
 
     await this.events.create(event);
 
-    const { items: activeConsumers } = await this.consumers.findByTopicId(
-      topic.id,
-      request.tenantId,
-      { page: 1, pageSize: 100 },
-    );
+    const activeConsumers = await this.consumers.findByTopicId(topic.id, 100, 0);
 
     const now = new Date();
     await Promise.all(
@@ -80,18 +74,25 @@ export class EventService {
   }
 
   async getById(eventId: string, tenantId: string): Promise<Event> {
-    const event = await this.events.findById(eventId, tenantId);
+    const event = await this.events.findById(eventId);
     if (!event) throw new NotFoundException('Event', eventId);
     return event;
   }
 
   async list(query: ListEventsQuery & { tenantId: string }): Promise<PaginatedResult<Event>> {
-    const options = { page: query.page, pageSize: query.pageSize };
+    const limit  = query.pageSize;
+    const offset = (query.page - 1) * query.pageSize;
 
-    const data = query.topicId
-      ? await this.events.findByTopicId(query.topicId, query.tenantId, options)
-      : await this.events.findAll(query.tenantId, options);
+    const [items, totalCount] = query.topicId
+      ? await Promise.all([
+          this.events.findByTopicId(query.topicId, limit, offset),
+          this.events.countByTopicId(query.topicId),
+        ])
+      : await Promise.all([
+          this.events.findAll(limit, offset),
+          this.events.count(),
+        ]);
 
-    return new PaginatedResult(data, options);
+    return new PaginatedResult(items, totalCount, query.page, query.pageSize);
   }
 }

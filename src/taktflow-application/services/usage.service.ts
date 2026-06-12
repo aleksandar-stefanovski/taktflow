@@ -13,7 +13,7 @@ export class UsageService implements IUsageService {
   ) {}
 
   async getMonthlyCount(tenantId: string): Promise<number> {
-    return this.events.countThisMonth(tenantId);
+    return this.events.countThisMonth();
   }
 
   async getPlanLimit(tenantId: string): Promise<number> {

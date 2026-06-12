@@ -1,14 +1,13 @@
 import { config } from 'dotenv';
 config({ path: '.env.local' });
 
-import { connectDatabase } from '@persistence/database.js';
-
-import { env } from './config/env.js';
-import { buildWorkerEngine } from './extensions/service-collection.extension.js';
+const { connectDatabase }     = await import('@persistence/database.js');
+const { databaseConfig }      = await import('./config/database.config.js');
+const { buildWorkerEngine }   = await import('./extensions/service-collection.extension.js');
 
 async function bootstrap(): Promise<void> {
-  const db     = await connectDatabase(env.DATABASE_URL);
-  const engine = buildWorkerEngine(db, env);
+  const db     = await connectDatabase(databaseConfig);
+  const engine = buildWorkerEngine(db);
 
   engine.start();
 

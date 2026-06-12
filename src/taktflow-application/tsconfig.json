@@ -5,11 +5,13 @@
     "outDir": "dist",
     "paths": {
       "@domain/*":         ["../taktflow-domain/*"],
+      "@abstractions/*":   ["../taktflow-abstractions/*"],
       "@application/*":    ["./*"]
     }
   },
   "references": [
-    { "path": "../taktflow-domain" }
+    { "path": "../taktflow-domain" },
+    { "path": "../taktflow-abstractions" }
   ],
   "include": ["interfaces", "requests", "responses", "services", "validators", "helpers"],
   "exclude": ["node_modules", "dist"]

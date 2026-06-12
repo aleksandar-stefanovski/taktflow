@@ -1,14 +1,14 @@
-import { randomBytes } from 'crypto';
+import { randomBytes } from 'node:crypto';
 
 import type { IConsumerRepository } from '@domain/interfaces/consumer-repository.interface.js';
 import type { ITopicRepository } from '@domain/interfaces/topic-repository.interface.js';
 import type { IEventDeliveryRepository } from '@domain/interfaces/event-delivery-repository.interface.js';
 import { Consumer } from '@domain/entities/consumer.js';
+import { EntityKey } from '@domain/entities/entity-key.js';
 import { NotFoundException } from '@domain/exceptions/not-found-exception.js';
 import { ValidationException } from '@domain/exceptions/validation-exception.js';
 
 import type { IEventQueueService } from '../interfaces/event-queue-service.interface.js';
-import type { ConsumerConfig } from '@domain/interfaces/consumer-config.interface.js';
 import type { ClaimedEvent } from '../interfaces/claimed-event.interface.js';
 import type { IConsumerHealth } from '../interfaces/consumer-health.interface.js';
 import type { CreatePushConsumerRequest } from '../requests/consumers/create-push-consumer.request.js';
@@ -20,12 +20,13 @@ import { PaginatedResult } from '../responses/paginated-result.js';
 
 export class ConsumerService {
   constructor(
-    private readonly consumers:    IConsumerRepository,
-    private readonly topics:       ITopicRepository,
-    private readonly deliveries:   IEventDeliveryRepository,
-    private readonly queue:               IEventQueueService,
-    private readonly retryBaseDelayMs:    number,
-    private readonly defaultConsumerConfig: ConsumerConfig,
+    private readonly consumers:          IConsumerRepository,
+    private readonly topics:             ITopicRepository,
+    private readonly deliveries:         IEventDeliveryRepository,
+    private readonly queue:              IEventQueueService,
+    private readonly retryBaseDelayMs:   number,
+    private readonly maxRetryAttempts:   number,
+    private readonly alertAfterFailures: number,
   ) {}
 
   private getRetryDelay(attempt: number): number {
@@ -33,54 +34,56 @@ export class ConsumerService {
   }
 
   async createPush(request: CreatePushConsumerRequest & { tenantId: string }): Promise<Consumer> {
-    const topic = await this.topics.findById(request.topicId, request.tenantId);
+    const topic = await this.topics.findById(request.topicId);
     if (!topic) throw new NotFoundException('Topic', request.topicId);
 
     const secret   = randomBytes(32).toString('hex');
     const consumer = new Consumer({
-      tenantId:    request.tenantId,
-      topicId:     request.topicId,
-      name:        request.name,
-      type:        'push',
-      url:         request.url,
+      key:               new EntityKey(request.tenantId),
+      topicId:           request.topicId,
+      name:              request.name,
+      type:              'push',
+      url:               request.url,
       secret,
-      environment: request.environment,
-      config:      { ...this.defaultConsumerConfig, alertEmail: request.alertEmail ?? null },
+      environment:       request.environment,
+      alertEmail:        request.alertEmail ?? null,
+      alertAfterFailures: this.alertAfterFailures,
     });
 
     return this.consumers.create(consumer);
   }
 
   async createPull(request: CreatePullConsumerRequest & { tenantId: string }): Promise<Consumer> {
-    const topic = await this.topics.findById(request.topicId, request.tenantId);
+    const topic = await this.topics.findById(request.topicId);
     if (!topic) throw new NotFoundException('Topic', request.topicId);
 
     const secret   = randomBytes(32).toString('hex');
     const consumer = new Consumer({
-      tenantId:    request.tenantId,
-      topicId:     request.topicId,
-      name:        request.name,
-      type:        'pull',
-      url:         null,
+      key:               new EntityKey(request.tenantId),
+      topicId:           request.topicId,
+      name:              request.name,
+      type:              'pull',
+      url:               null,
       secret,
-      environment: request.environment,
-      config:      { ...this.defaultConsumerConfig, alertEmail: request.alertEmail ?? null },
+      environment:       request.environment,
+      alertEmail:        request.alertEmail ?? null,
+      alertAfterFailures: this.alertAfterFailures,
     });
 
     return this.consumers.create(consumer);
   }
 
   async getById(id: string, tenantId: string): Promise<Consumer> {
-    const consumer = await this.consumers.findById(id, tenantId);
+    const consumer = await this.consumers.findById(id);
     if (!consumer) throw new NotFoundException('Consumer', id);
     return consumer;
   }
 
   async getHealth(consumerId: string, tenantId: string): Promise<IConsumerHealth> {
-    const consumer = await this.consumers.findById(consumerId, tenantId);
+    const consumer = await this.consumers.findById(consumerId);
     if (!consumer) throw new NotFoundException('Consumer', consumerId);
 
-    const allDeliveries = await this.deliveries.findByConsumerId(consumerId, tenantId);
+    const allDeliveries = await this.deliveries.findByConsumerId(consumerId);
 
     const health: IConsumerHealth = {
       consumerId,
@@ -104,54 +107,57 @@ export class ConsumerService {
   }
 
   async list(query: ListConsumersQuery & { tenantId: string }): Promise<PaginatedResult<Consumer>> {
-    const options = { page: query.page, pageSize: query.pageSize };
+    const limit  = query.pageSize;
+    const offset = (query.page - 1) * query.pageSize;
 
-    const data = query.topicId
-      ? await this.consumers.findByTopicId(query.topicId, query.tenantId, options)
-      : await this.consumers.findAll(query.tenantId, options);
+    const [items, totalCount] = query.topicId
+      ? await Promise.all([
+          this.consumers.findByTopicId(query.topicId, limit, offset),
+          this.consumers.countByTopicId(query.topicId),
+        ])
+      : await Promise.all([
+          this.consumers.findAll(limit, offset),
+          this.consumers.count(),
+        ]);
 
-    return new PaginatedResult(data, options);
+    return new PaginatedResult(items, totalCount, query.page, query.pageSize);
   }
 
   async update(id: string, request: UpdateConsumerRequest & { tenantId: string }): Promise<Consumer> {
-    const consumer = await this.consumers.findById(id, request.tenantId);
+    const consumer = await this.consumers.findById(id);
     if (!consumer) throw new NotFoundException('Consumer', id);
 
     if (request.url !== undefined && consumer.type === 'pull') {
       throw new ValidationException('Pull consumers do not have a URL');
     }
 
-    const mergedConfig = request.alertEmail !== undefined
-      ? { ...consumer.config, alertEmail: request.alertEmail }
-      : undefined;
-
-    return this.consumers.update(id, request.tenantId, {
+    return this.consumers.update(id, {
       ...(request.name !== undefined && { name: request.name }),
       ...(request.url !== undefined && { url: request.url }),
-      ...(mergedConfig !== undefined && { config: mergedConfig }),
+      ...(request.alertEmail !== undefined && { alertEmail: request.alertEmail }),
     });
   }
 
   async delete(id: string, tenantId: string): Promise<void> {
-    const consumer = await this.consumers.findById(id, tenantId);
+    const consumer = await this.consumers.findById(id);
     if (!consumer) throw new NotFoundException('Consumer', id);
-    await this.consumers.delete(id, tenantId);
+    await this.consumers.delete(id);
   }
 
   async pause(id: string, tenantId: string): Promise<Consumer> {
-    const consumer = await this.consumers.findById(id, tenantId);
+    const consumer = await this.consumers.findById(id);
     if (!consumer) throw new NotFoundException('Consumer', id);
-    return this.consumers.update(id, tenantId, { status: 'paused' });
+    return this.consumers.update(id, { status: 'paused' });
   }
 
   async resume(id: string, tenantId: string): Promise<Consumer> {
-    const consumer = await this.consumers.findById(id, tenantId);
+    const consumer = await this.consumers.findById(id);
     if (!consumer) throw new NotFoundException('Consumer', id);
-    return this.consumers.update(id, tenantId, { status: 'active' });
+    return this.consumers.update(id, { status: 'active' });
   }
 
   async consume(consumerId: string, tenantId: string, limit: number): Promise<ClaimedEvent[]> {
-    const consumer = await this.consumers.findById(consumerId, tenantId);
+    const consumer = await this.consumers.findById(consumerId);
     if (!consumer) throw new NotFoundException('Consumer', consumerId);
     return this.queue.claimForConsumer(consumerId, tenantId, limit);
   }
@@ -160,7 +166,7 @@ export class ConsumerService {
     eventId: string,
     request: AcknowledgeEventRequest & { tenantId: string },
   ): Promise<void> {
-    const all      = await this.deliveries.findByEventId(eventId, request.tenantId);
+    const all      = await this.deliveries.findByEventId(eventId);
     const delivery = all.find(
       (d) => d.status === 'processing' || d.status === 'awaiting_ack',
     );
@@ -172,12 +178,9 @@ export class ConsumerService {
       return;
     }
 
-    const consumer = await this.consumers.findById(delivery.consumerId, request.tenantId);
-    if (!consumer) throw new NotFoundException('Consumer', delivery.consumerId);
-
     const reason = request.error ?? 'Consumer reported failure';
 
-    if (delivery.retryCount >= consumer.config.retryAttempts) {
+    if (delivery.retryCount >= this.maxRetryAttempts) {
       await this.queue.moveToDeadLetter(delivery.id, reason);
       return;
     }

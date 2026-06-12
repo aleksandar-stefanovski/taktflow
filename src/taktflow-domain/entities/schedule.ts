@@ -1,22 +1,21 @@
-import { BaseEntity } from './base-entity.js';
-import type { HasTenant } from '../interfaces/has-tenant.interface.js';
-import type { HasSoftDelete } from '../interfaces/has-soft-delete.interface.js';
+import { EntityBase } from './entity-base.js';
+import { EntityKey } from './entity-key.js';
+import type { HasSoftDelete } from './has-soft-delete.interface.js';
 
 export type ScheduleStatus = 'active' | 'paused';
 
-export class Schedule extends BaseEntity implements HasTenant, HasSoftDelete {
-  readonly tenantId:    string;
+export class Schedule extends EntityBase implements HasSoftDelete {
   readonly topicId:     string;
   readonly cron:        string;
   payload:              Record<string, unknown>;
   readonly environment: string;
-  status:    ScheduleStatus;
-  lastRun:   Date | null;
-  nextRun:   Date | null;
-  deletedAt: Date | null = null;
+  status:               ScheduleStatus;
+  lastRun:              Date | null;
+  nextRun:              Date | null;
+  deletedAt:            Date | null = null;
 
   constructor(props: {
-    tenantId:    string;
+    key:         EntityKey;
     topicId:     string;
     cron:        string;
     environment: string;
@@ -24,12 +23,10 @@ export class Schedule extends BaseEntity implements HasTenant, HasSoftDelete {
     status?:     ScheduleStatus;
     lastRun?:    Date | null;
     nextRun?:    Date | null;
-    id?:         string;
     createdAt?:  Date;
     updatedAt?:  Date;
   }) {
-    super(props.id, props.createdAt, props.updatedAt);
-    this.tenantId    = props.tenantId;
+    super(props.key, props.createdAt, props.updatedAt);
     this.topicId     = props.topicId;
     this.cron        = props.cron;
     this.environment = props.environment;

@@ -1,193 +1,171 @@
+import { randomUUID } from 'node:crypto';
+
+import { eq, sql } from 'drizzle-orm';
+
+import type { DrizzleDb } from '@persistence/database.js';
+import { eventDeliveries } from '@persistence/schema/event-deliveries.js';
+import { deadLetterEvents } from '@persistence/schema/dead-letter-events.js';
+import { events } from '@persistence/schema/events.js';
 import type { IQueueEngine } from '../interfaces/queue-engine.interface.js';
 import type { QueuedEvent } from '../interfaces/queued-event.interface.js';
-import type { IDatabasePool } from '../interfaces/database-pool.interface.js';
-import type { IPoolClient } from '../interfaces/pool-client.interface.js';
 import type { DeliveryRow } from '../interfaces/delivery-row.interface.js';
 
+type DrizzleTx = Parameters<Parameters<DrizzleDb['transaction']>[0]>[0];
+
 export class PostgresQueueEngine implements IQueueEngine {
-  constructor(private readonly pool: IDatabasePool) {}
+  constructor(private readonly db: DrizzleDb) {}
 
   async enqueue(event: QueuedEvent): Promise<void> {
-    await this.pool.query(
-      `INSERT INTO event_deliveries (id, tenant_id, event_id, consumer_id, status, retry_count, scheduled_at)
-       VALUES ($1, $2, $3, $4, 'pending', $5, $6)`,
-      [event.id, event.tenantId, event.eventId, event.consumerId, event.attempt, event.scheduledAt],
-    );
+    await this.db
+      .insert(eventDeliveries)
+      .values({
+        id:          event.id,
+        tenantId:    event.tenantId,
+        eventId:     event.eventId,
+        consumerId:  event.consumerId,
+        status:      'pending',
+        retryCount:  event.attempt,
+        scheduledAt: event.scheduledAt,
+      });
   }
 
   async claim(limit: number): Promise<QueuedEvent[]> {
-    const client: IPoolClient = await this.pool.connect();
-    try {
-      await client.query('BEGIN');
+    return this.db.transaction(async (tx: DrizzleTx) => {
+      // NOTE: raw SQL required — Drizzle does not support FOR UPDATE SKIP LOCKED
+      const result = await tx.execute(sql`
+        SELECT ed.id, ed.event_id, ed.tenant_id, ed.consumer_id, ed.retry_count, ed.scheduled_at,
+               e.payload, e.topic_id
+        FROM event_deliveries ed
+        JOIN events e ON e.id = ed.event_id
+        WHERE ed.status = 'pending' AND ed.scheduled_at <= NOW()
+        ORDER BY ed.scheduled_at ASC
+        FOR UPDATE OF ed SKIP LOCKED
+        LIMIT ${limit}
+      `);
 
-      const claimed = await client.query<DeliveryRow>(
-        `SELECT ed.id, ed.event_id, ed.tenant_id, ed.consumer_id, ed.retry_count, ed.scheduled_at,
-                e.payload, e.topic_id
-         FROM event_deliveries ed
-         JOIN events e ON e.id = ed.event_id
-         WHERE ed.status = 'pending' AND ed.scheduled_at <= NOW()
-         ORDER BY ed.scheduled_at ASC
-         FOR UPDATE OF ed SKIP LOCKED
-         LIMIT $1`,
-        [limit],
-      );
+      const rows = result.rows as unknown as DeliveryRow[];
+      if (rows.length === 0) return [];
 
-      if (claimed.rows.length === 0) {
-        await client.query('COMMIT');
-        return [];
-      }
+      const ids = rows.map((row: DeliveryRow) => row.id);
+      await tx.execute(sql`
+        UPDATE event_deliveries
+        SET status = 'processing', started_at = NOW(), updated_at = NOW()
+        WHERE id = ANY(${ids})
+      `);
 
-      const ids = claimed.rows.map(row => row.id);
-
-      await client.query(
-        `UPDATE event_deliveries
-         SET status = 'processing', started_at = NOW(), updated_at = NOW()
-         WHERE id = ANY($1)`,
-        [ids],
-      );
-
-      await client.query('COMMIT');
-
-      return claimed.rows.map(row => ({
-        id:          row.id,
-        eventId:     row.event_id,
-        tenantId:    row.tenant_id,
-        topicId:     row.topic_id,
-        consumerId:  row.consumer_id,
-        payload:     row.payload,
-        attempt:     row.retry_count,
-        scheduledAt: row.scheduled_at,
-      }));
-    } catch (error) {
-      await client.query('ROLLBACK');
-      throw error;
-    } finally {
-      client.release();
-    }
+      return rows.map(this.toQueuedEvent);
+    });
   }
 
   async claimForConsumer(consumerId: string, tenantId: string, limit: number): Promise<QueuedEvent[]> {
-    const client: IPoolClient = await this.pool.connect();
-    try {
-      await client.query('BEGIN');
-
+    return this.db.transaction(async (tx: DrizzleTx) => {
       // NOTE: raw SQL required — Drizzle does not support FOR UPDATE SKIP LOCKED
-      const claimed = await client.query<DeliveryRow>(
-        `SELECT ed.id, ed.event_id, ed.tenant_id, ed.consumer_id, ed.retry_count, ed.scheduled_at,
-                e.payload, e.topic_id
-         FROM event_deliveries ed
-         JOIN events e ON e.id = ed.event_id
-         WHERE ed.status = 'pending' AND ed.scheduled_at <= NOW()
-           AND ed.consumer_id = $1 AND ed.tenant_id = $2
-         ORDER BY ed.scheduled_at ASC
-         FOR UPDATE OF ed SKIP LOCKED
-         LIMIT $3`,
-        [consumerId, tenantId, limit],
-      );
+      const result = await tx.execute(sql`
+        SELECT ed.id, ed.event_id, ed.tenant_id, ed.consumer_id, ed.retry_count, ed.scheduled_at,
+               e.payload, e.topic_id
+        FROM event_deliveries ed
+        JOIN events e ON e.id = ed.event_id
+        WHERE ed.status = 'pending' AND ed.scheduled_at <= NOW()
+          AND ed.consumer_id = ${consumerId} AND ed.tenant_id = ${tenantId}
+        ORDER BY ed.scheduled_at ASC
+        FOR UPDATE OF ed SKIP LOCKED
+        LIMIT ${limit}
+      `);
 
-      if (claimed.rows.length === 0) {
-        await client.query('COMMIT');
-        return [];
-      }
+      const rows = result.rows as unknown as DeliveryRow[];
+      if (rows.length === 0) return [];
 
-      const ids = claimed.rows.map(row => row.id);
+      const ids = rows.map((row: DeliveryRow) => row.id);
+      await tx.execute(sql`
+        UPDATE event_deliveries
+        SET status = 'processing', started_at = NOW(), updated_at = NOW()
+        WHERE id = ANY(${ids})
+      `);
 
-      await client.query(
-        `UPDATE event_deliveries
-         SET status = 'processing', started_at = NOW(), updated_at = NOW()
-         WHERE id = ANY($1)`,
-        [ids],
-      );
-
-      await client.query('COMMIT');
-
-      return claimed.rows.map(row => ({
-        id:          row.id,
-        eventId:     row.event_id,
-        tenantId:    row.tenant_id,
-        topicId:     row.topic_id,
-        consumerId:  row.consumer_id,
-        payload:     row.payload,
-        attempt:     row.retry_count,
-        scheduledAt: row.scheduled_at,
-      }));
-    } catch (error) {
-      await client.query('ROLLBACK');
-      throw error;
-    } finally {
-      client.release();
-    }
+      return rows.map(this.toQueuedEvent);
+    });
   }
 
   async acknowledge(deliveryId: string): Promise<void> {
-    await this.pool.query(
-      `UPDATE event_deliveries
-       SET status = 'delivered', delivered_at = NOW(), updated_at = NOW()
-       WHERE id = $1`,
-      [deliveryId],
-    );
+    await this.db
+      .update(eventDeliveries)
+      .set({ status: 'delivered', deliveredAt: new Date(), updatedAt: new Date() })
+      .where(eq(eventDeliveries.id, deliveryId));
   }
 
   async markAwaitingAck(deliveryId: string): Promise<void> {
-    await this.pool.query(
-      `UPDATE event_deliveries SET status = 'awaiting_ack', updated_at = NOW()
-       WHERE id = $1`,
-      [deliveryId],
-    );
+    await this.db
+      .update(eventDeliveries)
+      .set({ status: 'awaiting_ack', updatedAt: new Date() })
+      .where(eq(eventDeliveries.id, deliveryId));
   }
 
   async releaseToPending(deliveryId: string): Promise<void> {
-    await this.pool.query(
-      `UPDATE event_deliveries
-       SET status = 'pending', started_at = NULL, updated_at = NOW()
-       WHERE id = $1`,
-      [deliveryId],
-    );
+    await this.db
+      .update(eventDeliveries)
+      .set({ status: 'pending', startedAt: null, updatedAt: new Date() })
+      .where(eq(eventDeliveries.id, deliveryId));
   }
 
   async scheduleRetry(deliveryId: string, delayMs: number): Promise<void> {
-    await this.pool.query(
-      `UPDATE event_deliveries
-       SET status = 'pending',
-           scheduled_at = NOW() + ($2 * INTERVAL '1 millisecond'),
-           retry_count = retry_count + 1,
-           updated_at = NOW()
-       WHERE id = $1`,
-      [deliveryId, delayMs],
-    );
+    await this.db
+      .update(eventDeliveries)
+      .set({
+        status:      'pending',
+        scheduledAt: sql`NOW() + (${delayMs} * INTERVAL '1 millisecond')`,
+        retryCount:  sql`${eventDeliveries.retryCount} + 1`,
+        updatedAt:   new Date(),
+      })
+      .where(eq(eventDeliveries.id, deliveryId));
   }
 
   async moveToDeadLetter(deliveryId: string, reason: string): Promise<void> {
-    const client: IPoolClient = await this.pool.connect();
-    try {
-      await client.query('BEGIN');
+    await this.db.transaction(async (tx: DrizzleTx) => {
+      const [delivery] = await tx
+        .select({
+          tenantId:   eventDeliveries.tenantId,
+          eventId:    eventDeliveries.eventId,
+          consumerId: eventDeliveries.consumerId,
+          payload:    events.payload,
+        })
+        .from(eventDeliveries)
+        .innerJoin(events, eq(events.id, eventDeliveries.eventId))
+        .where(eq(eventDeliveries.id, deliveryId))
+        .limit(1);
 
-      await client.query(
-        `WITH delivery_data AS (
-           SELECT ed.tenant_id, ed.id AS delivery_id, ed.event_id, ed.consumer_id, e.payload
-           FROM event_deliveries ed
-           JOIN events e ON e.id = ed.event_id
-           WHERE ed.id = $1
-         )
-         INSERT INTO dead_letter_events
-           (tenant_id, event_delivery_id, event_id, consumer_id, failure_reason, payload_snapshot)
-         SELECT tenant_id, delivery_id, event_id, consumer_id, $2, payload
-         FROM delivery_data`,
-        [deliveryId, reason],
-      );
+      if (!delivery) return;
 
-      await client.query(
-        `UPDATE event_deliveries SET status = 'failed', updated_at = NOW()
-         WHERE id = $1`,
-        [deliveryId],
-      );
+      await tx.insert(deadLetterEvents).values({
+        id:              randomUUID(),
+        tenantId:        delivery.tenantId,
+        eventDeliveryId: deliveryId,
+        eventId:         delivery.eventId,
+        consumerId:      delivery.consumerId,
+        failureReason:   reason,
+        payloadSnapshot: delivery.payload as Record<string, unknown>,
+        replayed:        false,
+        replayedAt:      null,
+        createdAt:       new Date(),
+        updatedAt:       new Date(),
+      });
 
-      await client.query('COMMIT');
-    } catch (error) {
-      await client.query('ROLLBACK');
-      throw error;
-    } finally {
-      client.release();
-    }
+      await tx
+        .update(eventDeliveries)
+        .set({ status: 'failed', updatedAt: new Date() })
+        .where(eq(eventDeliveries.id, deliveryId));
+    });
+  }
+
+  private toQueuedEvent(row: DeliveryRow): QueuedEvent {
+    return {
+      id:          row.id,
+      eventId:     row.event_id,
+      tenantId:    row.tenant_id,
+      topicId:     row.topic_id,
+      consumerId:  row.consumer_id,
+      payload:     row.payload,
+      attempt:     row.retry_count,
+      scheduledAt: row.scheduled_at,
+    };
   }
 }

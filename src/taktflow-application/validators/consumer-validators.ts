@@ -17,16 +17,6 @@ export const CreatePullConsumerSchema = z.object({
   alertEmail:  z.string().email().nullable().optional(),
 });
 
-const ConsumerConfigSchema = z.object({
-  timeoutMs:          z.number().int(),
-  retryAttempts:      z.number().int(),
-  retryBackoff:       z.string(),
-  retryInitialDelayMs: z.number().int(),
-  alertAfterFailures: z.number().int(),
-  alertEmail:         z.string().nullable(),
-  maxConcurrent:      z.number().int(),
-});
-
 export const CreatePushConsumerResponseSchema = z.object({
   id:          z.string().uuid(),
   topicId:     z.string().uuid(),
@@ -35,7 +25,7 @@ export const CreatePushConsumerResponseSchema = z.object({
   url:         z.string(),
   environment: z.string(),
   status:      z.string(),
-  config:      ConsumerConfigSchema,
+  alertEmail:  z.string().nullable(),
   createdAt:   z.string().datetime(),
 });
 
@@ -46,7 +36,7 @@ export const CreatePullConsumerResponseSchema = z.object({
   type:        z.literal('pull'),
   environment: z.string(),
   status:      z.string(),
-  config:      ConsumerConfigSchema,
+  alertEmail:  z.string().nullable(),
   createdAt:   z.string().datetime(),
 });
 
@@ -58,7 +48,7 @@ const ConsumerSummarySchema = z.object({
   url:         z.string().nullable(),
   environment: z.string(),
   status:      z.string(),
-  config:      ConsumerConfigSchema,
+  alertEmail:  z.string().nullable(),
   createdAt:   z.string().datetime(),
   updatedAt:   z.string().datetime(),
 });
@@ -77,7 +67,7 @@ export const ConsumerDetailResponseSchema = z.object({
   url:         z.string().nullable(),
   environment: z.string(),
   status:      z.string(),
-  config:      ConsumerConfigSchema,
+  alertEmail:  z.string().nullable(),
   createdAt:   z.string().datetime(),
   updatedAt:   z.string().datetime(),
 });

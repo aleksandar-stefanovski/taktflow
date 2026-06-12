@@ -1,9 +1,10 @@
-import type { EventDelivery } from '../entities/event-delivery.js';
-import type { ITenantRepository } from './tenant-repository.interface.js';
+import type { EventDelivery } from '@domain/entities/event-delivery.js';
+import type { IEventDeliveryReadRepository } from './readonly/event-delivery-read-repository.interface.js';
+import type { IEntityBaseRepository } from './entity-base-repository.interface.js';
 
-export interface IEventDeliveryRepository extends ITenantRepository<EventDelivery> {
-  findByEventId(eventId: string, tenantId: string): Promise<EventDelivery[]>;
-  findByConsumerId(consumerId: string, tenantId: string): Promise<EventDelivery[]>;
+export interface IEventDeliveryRepository
+  extends IEventDeliveryReadRepository,
+    IEntityBaseRepository<EventDelivery> {
   resetTimedOutAcks(awaitingAckTimeoutHours: number): Promise<void>;
   releaseStuckDeliveries(stuckThresholdMs: number): Promise<number>;
 }

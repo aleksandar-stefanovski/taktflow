@@ -6,9 +6,8 @@ import type { TenantRow } from '../schema/tenants.js';
 import type { Tenant } from '@domain/entities/tenant.js';
 import type { PlanTier } from '@domain/entities/tenant.js';
 import { Tenant as TenantEntity } from '@domain/entities/tenant.js';
+import { EntityKey } from '@domain/entities/entity-key.js';
 import type { ITenantRootRepository } from '@domain/interfaces/tenant-root-repository.interface.js';
-import type { PaginationOptions } from '@domain/interfaces/pagination-options.interface.js';
-import type { PagedData } from '@domain/interfaces/paged-data.interface.js';
 
 export class TenantRepository implements ITenantRootRepository {
   constructor(private readonly db: DrizzleDb) {}
@@ -24,31 +23,25 @@ export class TenantRepository implements ITenantRootRepository {
     return row ? TenantRepository.toDomain(row) : null;
   }
 
-  async findAll(options?: PaginationOptions): Promise<PagedData<Tenant>> {
-    const page     = options?.page ?? 1;
-    const pageSize = options?.pageSize ?? 100;
-    const offset   = (page - 1) * pageSize;
+  async findAll(limit: number, offset: number): Promise<Tenant[]> {
+    const rows = await this.db
+      .select()
+      .from(tenants)
+      .where(isNull(tenants.deletedAt))
+      .limit(limit)
+      .offset(offset)
+      .orderBy(desc(tenants.createdAt));
 
-    const where = isNull(tenants.deletedAt);
+    return rows.map(TenantRepository.toDomain);
+  }
 
-    const [rows, countResult] = await Promise.all([
-      this.db
-        .select()
-        .from(tenants)
-        .where(where)
-        .limit(pageSize)
-        .offset(offset)
-        .orderBy(desc(tenants.createdAt)),
-      this.db
-        .select({ total: count() })
-        .from(tenants)
-        .where(where),
-    ]);
+  async count(): Promise<number> {
+    const result = await this.db
+      .select({ total: count() })
+      .from(tenants)
+      .where(isNull(tenants.deletedAt));
 
-    return {
-      items:      rows.map(TenantRepository.toDomain),
-      totalCount: countResult[0]?.total ?? 0,
-    };
+    return result[0]?.total ?? 0;
   }
 
   async create(tenant: Tenant): Promise<Tenant> {
@@ -86,7 +79,7 @@ export class TenantRepository implements ITenantRootRepository {
 
   static toDomain(row: TenantRow): Tenant {
     const entity = new TenantEntity({
-      id:        row.id,
+      key:       new EntityKey(row.id, null),
       name:      row.name,
       plan:      row.plan as PlanTier,
       createdAt: row.createdAt,

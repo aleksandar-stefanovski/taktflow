@@ -11,6 +11,7 @@
     "dev": "tsc --watch"
   },
   "dependencies": {
+    "@taktflow/abstractions": "workspace:*",
     "@taktflow/domain": "workspace:*",
     "zod": "^3.24.0"
   },

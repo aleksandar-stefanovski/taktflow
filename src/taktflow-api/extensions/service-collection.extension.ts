@@ -1,4 +1,3 @@
-import type { Pool } from 'pg';
 import type { FastifyInstance } from 'fastify';
 
 import { authConfig }     from '@api/config/auth.config.js';
@@ -13,12 +12,17 @@ import { ConsumerRepository } from '@persistence/repositories/consumer-repositor
 import { ScheduleRepository } from '@persistence/repositories/schedule-repository.js';
 import { ApiKeyRepository } from '@persistence/repositories/api-key-repository.js';
 import { UserRepository } from '@persistence/repositories/user-repository.js';
+import { UserRootRepository } from '@persistence/repositories/user-root-repository.js';
 import { TenantRepository } from '@persistence/repositories/tenant-repository.js';
 import { TenantMetricsRepository } from '@persistence/repositories/tenant-metrics-repository.js';
 import { DeadLetterEventRepository } from '@persistence/repositories/dead-letter-event-repository.js';
 import { EventDeliveryRepository } from '@persistence/repositories/event-delivery-repository.js';
 
 import { PostgresQueueEngine } from '@infrastructure/queue/postgres-queue-engine.js';
+import { AsyncLocalStorageTenantProvider } from '@infrastructure/context/async-local-storage-tenant-provider.js';
+import { tenantContextStore } from '@infrastructure/context/tenant-context-store.js';
+
+import type { ICurrentTenantProvider } from '@domain/interfaces/current-tenant-provider.interface.js';
 
 import { ApiKeyService } from '@application/services/api-key.service.js';
 import { AuthService } from '@application/services/auth.service.js';
@@ -39,22 +43,28 @@ import { PasswordService } from '@infrastructure/auth/password-service.js';
 import type { ApplicationDomainServices } from '@api/interfaces/application-domain-services.interface.js';
 import type { ApplicationRepositories } from '@api/interfaces/application-repositories.interface.js';
 
-function buildRepositories(db: DrizzleDb): ApplicationRepositories {
+function buildRepositories(
+  db: DrizzleDb,
+  tenantProvider: ICurrentTenantProvider,
+): ApplicationRepositories {
   return {
-    events:     new EventRepository(db),
-    topics:     new TopicRepository(db),
-    consumers:  new ConsumerRepository(db),
-    schedules:  new ScheduleRepository(db),
-    apiKeys:    new ApiKeyRepository(db),
-    users:      new UserRepository(db),
+    events:     new EventRepository(db, tenantProvider),
+    topics:     new TopicRepository(db, tenantProvider),
+    consumers:  new ConsumerRepository(db, tenantProvider),
+    schedules:  new ScheduleRepository(db, tenantProvider),
+    apiKeys:    new ApiKeyRepository(db, tenantProvider),
+    users:      new UserRepository(db, tenantProvider),
     tenants:    new TenantRepository(db),
-    dlq:        new DeadLetterEventRepository(db),
-    deliveries: new EventDeliveryRepository(db),
+    dlq:        new DeadLetterEventRepository(db, tenantProvider),
+    deliveries: new EventDeliveryRepository(db, tenantProvider),
   };
 }
 
-function buildUsageService(db: DrizzleDb): IUsageService {
-  return new UsageService(new EventRepository(db), new TenantRepository(db), {
+function buildUsageService(
+  db: DrizzleDb,
+  tenantProvider: ICurrentTenantProvider,
+): IUsageService {
+  return new UsageService(new EventRepository(db, tenantProvider), new TenantRepository(db), {
     starter:    plansConfig.PLAN_STARTER_EVENTS_PER_MONTH,
     growth:     plansConfig.PLAN_GROWTH_EVENTS_PER_MONTH,
     business:   plansConfig.PLAN_BUSINESS_EVENTS_PER_MONTH,
@@ -67,8 +77,7 @@ function buildDomainServices(
   repos: ApplicationRepositories,
   usage: IUsageService,
 ): ApplicationDomainServices {
-  const pool      = (db as unknown as { $client: Pool }).$client;
-  const queue     = new PostgresQueueEngine(pool);
+  const queue     = new PostgresQueueEngine(db);
   const tokens    = new TokenService(
     authConfig.JWT_ACCESS_SECRET,
     authConfig.JWT_REFRESH_SECRET,
@@ -83,16 +92,8 @@ function buildDomainServices(
 
   return {
     apiKey:     new ApiKeyService(repos.apiKeys, authConfig.API_KEY_PREFIX),
-    auth:       new AuthService(repos.tenants, repos.users, passwords, tokens, authConfig.REFRESH_TOKEN_EXPIRY_DAYS * 24 * 60 * 60 * 1000),
-    consumers:  new ConsumerService(repos.consumers, repos.topics, repos.deliveries, queue, plansConfig.RETRY_BASE_DELAY_MS, {
-      timeoutMs:           defaultsConfig.CONSUMER_DEFAULT_TIMEOUT_MS,
-      retryAttempts:       defaultsConfig.CONSUMER_DEFAULT_RETRY_ATTEMPTS,
-      retryBackoff:        defaultsConfig.CONSUMER_DEFAULT_RETRY_BACKOFF,
-      retryInitialDelayMs: defaultsConfig.CONSUMER_DEFAULT_RETRY_INITIAL_DELAY_MS,
-      alertAfterFailures:  defaultsConfig.CONSUMER_DEFAULT_ALERT_AFTER_FAILURES,
-      alertEmail:          null,
-      maxConcurrent:       defaultsConfig.CONSUMER_DEFAULT_MAX_CONCURRENT,
-    }),
+    auth:       new AuthService(repos.tenants, new UserRootRepository(db), passwords, tokens, authConfig.REFRESH_TOKEN_EXPIRY_DAYS * 24 * 60 * 60 * 1000),
+    consumers:  new ConsumerService(repos.consumers, repos.topics, repos.deliveries, queue, plansConfig.RETRY_BASE_DELAY_MS, plansConfig.RETRY_MAX_ATTEMPTS, defaultsConfig.ALERT_AFTER_FAILURES),
     deadLetter: new DeadLetterService(repos.dlq, repos.consumers, queue),
     events:     new EventService(repos.events, repos.topics, repos.consumers, queue, usage),
     dashboard:  new DashboardService(new TenantMetricsRepository(db)),
@@ -111,8 +112,14 @@ export async function registerApiDependencies(
   app: FastifyInstance,
   db: DrizzleDb,
 ): Promise<void> {
-  const repos    = buildRepositories(db);
-  const usage    = buildUsageService(db);
+  const tenantProvider = new AsyncLocalStorageTenantProvider();
+
+  app.addHook('onRequest', (_request, _reply, done) => {
+    tenantContextStore.run({ tenantId: null }, done);
+  });
+
+  const repos    = buildRepositories(db, tenantProvider);
+  const usage    = buildUsageService(db, tenantProvider);
   const services = buildDomainServices(db, repos, usage);
 
   app.decorate('repos',    repos);

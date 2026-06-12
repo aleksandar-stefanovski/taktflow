@@ -1,65 +1,72 @@
-import { and, eq, count, desc, sql } from 'drizzle-orm';
-import type { PgTableWithColumns, TableConfig } from 'drizzle-orm/pg-core';
+import { and, count, desc, eq, sql, type SQL } from 'drizzle-orm';
 
 import type { DrizzleDb } from '../database.js';
 import { events } from '../schema/events.js';
 import type { EventRow } from '../schema/events.js';
 import { Event } from '@domain/entities/event.js';
-import type { EventStatus, EventSource } from '@domain/entities/event.js';
 import type { IEventRepository } from '@domain/interfaces/event-repository.interface.js';
-import type { PaginationOptions } from '@domain/interfaces/pagination-options.interface.js';
-import type { PagedData } from '@domain/interfaces/paged-data.interface.js';
-import { BaseTenantRepository } from './base-tenant-repository.js';
+import type { ICurrentTenantProvider } from '@domain/interfaces/current-tenant-provider.interface.js';
+import { EventReadonlyRepository } from './readonly/event-readonly-repository.js';
+import { EntityBaseRepository } from './entity-base-repository.js';
 
 export class EventRepository
-  extends BaseTenantRepository<Event>
+  extends EntityBaseRepository<Event>
   implements IEventRepository {
 
-  constructor(db: DrizzleDb) {
-    super(db);
+  constructor(db: DrizzleDb, tenantProvider: ICurrentTenantProvider) {
+    super(db, events, tenantProvider);
   }
 
-  protected get table(): PgTableWithColumns<TableConfig> {
-    return events as unknown as PgTableWithColumns<TableConfig>;
+  protected override requiredFilters(): SQL {
+    return eq(this.table['tenantId']!, this.tenantId);
   }
 
   protected mapToDomain(row: Record<string, unknown>): Event {
-    return EventRepository.toDomain(row as EventRow);
+    return EventReadonlyRepository.toDomain(row as EventRow);
   }
 
-  async findById(id: string, tenantId: string): Promise<Event | null> {
+  async findByTopicId(topicId: string, limit: number, offset: number): Promise<Event[]> {
     const rows = await this.db
       .select()
       .from(events)
-      .where(and(eq(events.id, id), eq(events.tenantId, tenantId)))
+      .where(and(eq(events.topicId, topicId), eq(events.tenantId, this.tenantId)))
+      .limit(limit)
+      .offset(offset)
+      .orderBy(desc(events.createdAt));
+
+    return rows.map(EventReadonlyRepository.toDomain);
+  }
+
+  async countByTopicId(topicId: string): Promise<number> {
+    const result = await this.db
+      .select({ total: count() })
+      .from(events)
+      .where(and(eq(events.topicId, topicId), eq(events.tenantId, this.tenantId)));
+
+    return result[0]?.total ?? 0;
+  }
+
+  async findByIdempotencyKey(key: string): Promise<Event | null> {
+    const rows = await this.db
+      .select()
+      .from(events)
+      .where(and(eq(events.idempotencyKey, key), eq(events.tenantId, this.tenantId)))
       .limit(1);
 
     const [row] = rows;
-    return row ? EventRepository.toDomain(row) : null;
+    return row ? EventReadonlyRepository.toDomain(row) : null;
   }
 
-  async findAll(tenantId: string, options?: { page?: number; pageSize?: number }): Promise<{ items: Event[]; totalCount: number }> {
-    const page     = options?.page ?? 1;
-    const pageSize = options?.pageSize ?? 100;
-    const offset   = (page - 1) * pageSize;
+  async countThisMonth(): Promise<number> {
+    const result = await this.db
+      .select({ total: count() })
+      .from(events)
+      .where(and(
+        eq(events.tenantId, this.tenantId),
+        sql`${events.createdAt} >= date_trunc('month', now())`,
+      ));
 
-    const where = eq(events.tenantId, tenantId);
-
-    const [rows, countResult] = await Promise.all([
-      this.db
-        .select()
-        .from(events)
-        .where(where)
-        .limit(pageSize)
-        .offset(offset)
-        .orderBy(desc(events.createdAt)),
-      this.db
-        .select({ total: count() })
-        .from(events)
-        .where(where),
-    ]);
-
-    return { items: rows.map(EventRepository.toDomain), totalCount: countResult[0]?.total ?? 0 };
+    return result[0]?.total ?? 0;
   }
 
   async create(entity: Event): Promise<Event> {
@@ -67,7 +74,7 @@ export class EventRepository
       .insert(events)
       .values({
         id:             entity.id,
-        tenantId:       entity.tenantId,
+        tenantId:       entity.key.tenantId!,
         topicId:        entity.topicId,
         payload:        entity.payload,
         status:         entity.status,
@@ -84,10 +91,10 @@ export class EventRepository
 
     const [row] = rows;
     if (!row) throw new Error('Insert returned no rows');
-    return EventRepository.toDomain(row);
+    return EventReadonlyRepository.toDomain(row);
   }
 
-  async update(id: string, tenantId: string, updates: Partial<Event>): Promise<Event> {
+  async update(id: string, updates: Partial<Event>): Promise<Event> {
     const rows = await this.db
       .update(events)
       .set({
@@ -96,85 +103,17 @@ export class EventRepository
         ...(updates.processedAt !== undefined && { processedAt: updates.processedAt }),
         updatedAt: new Date(),
       })
-      .where(and(eq(events.id, id), eq(events.tenantId, tenantId)))
+      .where(and(eq(events.id, id), eq(events.tenantId, this.tenantId)))
       .returning();
 
     const [row] = rows;
     if (!row) throw new Error('Update returned no rows');
-    return EventRepository.toDomain(row);
+    return EventReadonlyRepository.toDomain(row);
   }
 
-  async findByTopicId(
-    topicId: string,
-    tenantId: string,
-    options?: PaginationOptions,
-  ): Promise<PagedData<Event>> {
-    const page     = options?.page ?? 1;
-    const pageSize = options?.pageSize ?? 100;
-    const offset   = (page - 1) * pageSize;
-
-    const where = and(eq(events.topicId, topicId), eq(events.tenantId, tenantId));
-
-    const [rows, countResult] = await Promise.all([
-      this.db
-        .select()
-        .from(events)
-        .where(where)
-        .limit(pageSize)
-        .offset(offset)
-        .orderBy(desc(events.createdAt)),
-      this.db
-        .select({ total: count() })
-        .from(events)
-        .where(where),
-    ]);
-
-    return {
-      items:      rows.map(EventRepository.toDomain),
-      totalCount: countResult[0]?.total ?? 0,
-    };
-  }
-
-  async findByIdempotencyKey(key: string, tenantId: string): Promise<Event | null> {
-    const rows = await this.db
-      .select()
-      .from(events)
-      .where(and(eq(events.idempotencyKey, key), eq(events.tenantId, tenantId)))
-      .limit(1);
-
-    const [row] = rows;
-    return row ? EventRepository.toDomain(row) : null;
-  }
-
-  async countThisMonth(tenantId: string): Promise<number> {
-    const result = await this.db
-      .select({ total: count() })
-      .from(events)
-      .where(
-        and(
-          eq(events.tenantId, tenantId),
-          sql`${events.createdAt} >= date_trunc('month', now())`,
-        ),
-      );
-
-    return result[0]?.total ?? 0;
-  }
-
-  static toDomain(row: EventRow): Event {
-    return new Event({
-      id:             row.id,
-      tenantId:       row.tenantId,
-      topicId:        row.topicId,
-      payload:        row.payload as Record<string, unknown>,
-      status:         row.status as EventStatus,
-      source:         row.source as EventSource,
-      idempotencyKey: row.idempotencyKey ?? null,
-      checksum:       row.checksum,
-      scheduledAt:    row.scheduledAt,
-      startedAt:      row.startedAt ?? null,
-      processedAt:    row.processedAt ?? null,
-      createdAt:      row.createdAt,
-      updatedAt:      row.updatedAt,
-    });
+  override async delete(id: string): Promise<void> {
+    await this.db
+      .delete(events)
+      .where(and(eq(events.id, id), eq(events.tenantId, this.tenantId)));
   }
 }

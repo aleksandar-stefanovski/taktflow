@@ -1,14 +1,7 @@
-import type { Event } from '../entities/event.js';
-import type { ITenantRepository } from './tenant-repository.interface.js';
-import type { PaginationOptions } from './pagination-options.interface.js';
-import type { PagedData } from './paged-data.interface.js';
+import type { Event } from '@domain/entities/event.js';
+import type { IEventReadRepository } from './readonly/event-read-repository.interface.js';
+import type { IEntityBaseRepository } from './entity-base-repository.interface.js';
 
-export interface IEventRepository extends ITenantRepository<Event> {
-  findByTopicId(
-    topicId: string,
-    tenantId: string,
-    options?: PaginationOptions,
-  ): Promise<PagedData<Event>>;
-  findByIdempotencyKey(key: string, tenantId: string): Promise<Event | null>;
-  countThisMonth(tenantId: string): Promise<number>;
-}
+export interface IEventRepository
+  extends IEventReadRepository,
+    IEntityBaseRepository<Event> {}

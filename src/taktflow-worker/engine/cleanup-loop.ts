@@ -25,6 +25,8 @@ export class CleanupLoop {
     await this.resetMonthlyCounters();
     await this.dropExpiredPartitions();
     await this.createNextMonthPartition();
+    await this.purgeOldDeadLetterEvents();
+    await this.purgeOldDeliveries();
   }
 
   private async resetMonthlyCounters(): Promise<void> {
@@ -74,6 +76,23 @@ export class CleanupLoop {
 
   private static isValidPartitionName(name: string): boolean {
     return /^events_\d{4}_\d{2}$/.test(name);
+  }
+
+  private async purgeOldDeadLetterEvents(): Promise<void> {
+    await this.deps.pool.query(
+      `DELETE FROM dead_letter_events
+       WHERE created_at < NOW() - ($1 * INTERVAL '1 day')`,
+      [this.deps.config.maxRetentionDays],
+    );
+  }
+
+  private async purgeOldDeliveries(): Promise<void> {
+    await this.deps.pool.query(
+      `DELETE FROM event_deliveries
+       WHERE status IN ('delivered', 'failed')
+       AND updated_at < NOW() - ($1 * INTERVAL '1 day')`,
+      [this.deps.config.maxRetentionDays],
+    );
   }
 
   private async createNextMonthPartition(): Promise<void> {

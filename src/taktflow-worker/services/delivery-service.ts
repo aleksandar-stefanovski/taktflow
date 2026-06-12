@@ -1,9 +1,10 @@
-import { createHash, createHmac } from 'crypto';
+import { createHash, createHmac } from 'node:crypto';
 import { canonicalJson } from '@application/helpers/canonical-json.helper.js';
 import { DELIVERY_HEADERS } from '@infrastructure/constants/delivery-headers.constants.js';
+import { tenantContextStore } from '@infrastructure/context/tenant-context-store.js';
+import type { QueuedEvent } from '@infrastructure/interfaces/queued-event.interface.js';
 
 import type { WorkerDependencies } from '../interfaces/worker-dependencies.interface.js';
-import type { ClaimedDelivery } from '../models/delivery.model.js';
 import type { Event } from '@domain/entities/event.js';
 import type { Consumer } from '@domain/entities/consumer.js';
 import type { Topic } from '@domain/entities/topic.js';
@@ -24,36 +25,26 @@ export class DeliveryService {
   }
 
   async claimAndDeliver(): Promise<void> {
-    // NOTE: raw SQL required — Drizzle does not support FOR UPDATE SKIP LOCKED
-    const result = await this.deps.pool.query<ClaimedDelivery>(`
-      UPDATE event_deliveries
-      SET status = 'processing', started_at = NOW()
-      WHERE id IN (
-        SELECT id FROM event_deliveries
-        WHERE status = 'pending'
-        AND scheduled_at <= NOW()
-        ORDER BY scheduled_at ASC
-        FOR UPDATE SKIP LOCKED
-        LIMIT $1
-      )
-      RETURNING id, event_id, tenant_id, consumer_id, retry_count, scheduled_at, started_at
-    `, [this.deps.config.batchSize]);
+    const deliveries = await this.deps.queue.claim(this.deps.config.batchSize);
+    if (!deliveries.length) return;
 
-    if (!result.rows.length) return;
-
-    await Promise.all(result.rows.map(delivery => this.deliver(delivery)));
+    await Promise.all(
+      deliveries.map(delivery =>
+        tenantContextStore.run({ tenantId: delivery.tenantId }, () => this.deliver(delivery)),
+      ),
+    );
   }
 
-  private async deliver(delivery: ClaimedDelivery): Promise<void> {
+  private async deliver(delivery: QueuedEvent): Promise<void> {
     this.activeDeliveries++;
     const startTime = Date.now();
     let consumer: Consumer | null = null;
 
     try {
-      const event = await this.deps.events.findById(delivery.event_id, delivery.tenant_id);
+      const event = await this.deps.events.findById(delivery.eventId);
       if (!event) return;
 
-      consumer = await this.deps.consumers.findById(delivery.consumer_id, delivery.tenant_id);
+      consumer = await this.deps.consumers.findById(delivery.consumerId);
       if (!consumer) {
         await this.deps.queue.moveToDeadLetter(delivery.id, 'consumer_deleted');
         return;
@@ -64,13 +55,18 @@ export class DeliveryService {
         return;
       }
 
-      const topic = await this.deps.topics.findById(consumer.topicId, delivery.tenant_id);
+      if (consumer.type === 'pull' || consumer.url == null) {
+        await this.deps.queue.releaseToPending(delivery.id);
+        return;
+      }
+
+      const topic = await this.deps.topics.findById(consumer.topicId);
 
       if (!this.checksumMatches(event)) {
         await this.deps.queue.moveToDeadLetter(delivery.id, 'payload_integrity_check_failed');
         this.deps.logger.logEventMovedToDeadLetter(
-          delivery.event_id,
-          delivery.consumer_id,
+          delivery.eventId,
+          delivery.consumerId,
           'payload_integrity_check_failed',
         );
         return;
@@ -98,12 +94,12 @@ export class DeliveryService {
     } catch (error) {
       const reason = error instanceof Error ? error.message : 'unknown error';
       this.deps.logger.logDeliveryFailed(
-        delivery.event_id,
-        delivery.consumer_id,
+        delivery.eventId,
+        delivery.consumerId,
         reason,
-        delivery.retry_count,
+        delivery.attempt,
       );
-      await this.retry.scheduleRetryOrDeadLetter(delivery, reason, consumer ?? undefined);
+      await this.retry.scheduleRetryOrDeadLetter(delivery, reason);
     } finally {
       this.activeDeliveries--;
     }
@@ -111,7 +107,7 @@ export class DeliveryService {
 
   private async handleResponse(
     response: Response,
-    delivery: ClaimedDelivery,
+    delivery: QueuedEvent,
     consumer: Consumer,
     startTime: number,
   ): Promise<void> {
@@ -126,23 +122,23 @@ export class DeliveryService {
     if (response.ok) {
       const durationMs = Date.now() - startTime;
       await this.deps.queue.acknowledge(delivery.id);
-      this.metrics.recordSuccess(delivery.tenant_id, durationMs);
-      this.deps.logger.logDeliverySucceeded(delivery.event_id, consumer.id, durationMs);
+      this.metrics.recordSuccess(delivery.tenantId, durationMs);
+      this.deps.logger.logDeliverySucceeded(delivery.eventId, consumer.id, durationMs);
       return;
     }
 
     if (response.status >= 400 && response.status < 500) {
       const reason = `HTTP ${response.status}: ${responseBody}`;
       await this.deps.queue.moveToDeadLetter(delivery.id, reason);
-      this.deps.logger.logEventMovedToDeadLetter(delivery.event_id, consumer.id, reason);
+      this.deps.logger.logEventMovedToDeadLetter(delivery.eventId, consumer.id, reason);
       return;
     }
 
-    await this.retry.scheduleRetryOrDeadLetter(delivery, `HTTP ${response.status}: ${responseBody}`, consumer);
+    await this.retry.scheduleRetryOrDeadLetter(delivery, `HTTP ${response.status}: ${responseBody}`);
   }
 
   private buildDeliveryHeaders(
-    delivery: ClaimedDelivery,
+    delivery: QueuedEvent,
     event: Event,
     consumer: Consumer,
     topic: Topic | null,
@@ -154,12 +150,12 @@ export class DeliveryService {
       .digest('hex');
 
     return {
-      'Content-Type':                       'application/json',
-      [DELIVERY_HEADERS.EVENT_ID]:          event.id,
-      [DELIVERY_HEADERS.TOPIC]:             topic?.name ?? event.topicId,
-      [DELIVERY_HEADERS.SIGNATURE]:         `sha256=${signature}`,
-      [DELIVERY_HEADERS.TIMESTAMP]:         timestamp,
-      [DELIVERY_HEADERS.ATTEMPT]:           String(delivery.retry_count),
+      'Content-Type':                  'application/json',
+      [DELIVERY_HEADERS.EVENT_ID]:     event.id,
+      [DELIVERY_HEADERS.TOPIC]:        topic?.name ?? event.topicId,
+      [DELIVERY_HEADERS.SIGNATURE]:    `sha256=${signature}`,
+      [DELIVERY_HEADERS.TIMESTAMP]:    timestamp,
+      [DELIVERY_HEADERS.ATTEMPT]:      String(delivery.attempt),
     };
   }
 

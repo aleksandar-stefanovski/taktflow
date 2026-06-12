@@ -1,29 +1,26 @@
-import { BaseEntity } from './base-entity.js';
-import type { HasTenant } from '../interfaces/has-tenant.interface.js';
-import type { HasSoftDelete } from '../interfaces/has-soft-delete.interface.js';
+import { EntityBase } from './entity-base.js';
+import { EntityKey } from './entity-key.js';
+import type { HasSoftDelete } from './has-soft-delete.interface.js';
 
-export class ApiKey extends BaseEntity implements HasTenant, HasSoftDelete {
-  readonly tenantId:    string;
+export class ApiKey extends EntityBase implements HasSoftDelete {
   readonly name:        string;
   readonly keyHash:     string;
   readonly keyPrefix:   string;
   readonly environment: string;
-  lastUsed:  Date | null;
-  deletedAt: Date | null = null;
+  lastUsed:             Date | null;
+  deletedAt:            Date | null = null;
 
   constructor(props: {
-    tenantId:    string;
+    key:         EntityKey;
     name:        string;
     keyHash:     string;
     keyPrefix:   string;
     environment: string;
     lastUsed?:   Date | null;
-    id?:         string;
     createdAt?:  Date;
     updatedAt?:  Date;
   }) {
-    super(props.id, props.createdAt, props.updatedAt);
-    this.tenantId    = props.tenantId;
+    super(props.key, props.createdAt, props.updatedAt);
     this.name        = props.name;
     this.keyHash     = props.keyHash;
     this.keyPrefix   = props.keyPrefix;

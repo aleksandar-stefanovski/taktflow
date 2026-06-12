@@ -10,13 +10,13 @@ WORKDIR /app
 FROM base AS deps
 # Copy workspace manifests only — enables layer caching on source changes
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY src/taktflow-abstractions/package.json   ./src/taktflow-abstractions/
 COPY src/taktflow-api/package.json            ./src/taktflow-api/
 COPY src/taktflow-application/package.json    ./src/taktflow-application/
 COPY src/taktflow-domain/package.json         ./src/taktflow-domain/
 COPY src/taktflow-infrastructure/package.json ./src/taktflow-infrastructure/
 COPY src/taktflow-persistence/package.json    ./src/taktflow-persistence/
-COPY packages/taktflow-types/package.json     ./packages/taktflow-types/
-COPY packages/taktflow-utils/package.json     ./packages/taktflow-utils/
+COPY src/taktflow-worker/package.json         ./src/taktflow-worker/
 RUN pnpm install --frozen-lockfile
 
 # ── development ───────────────────────────────────────────────────────────────
@@ -30,13 +30,12 @@ EXPOSE 3000
 FROM base AS builder
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-RUN pnpm --filter @taktflow/types       build
-RUN pnpm --filter @taktflow/utils       build
-RUN pnpm --filter @taktflow/domain      build
-RUN pnpm --filter @taktflow/application build
-RUN pnpm --filter @taktflow/persistence build
-RUN pnpm --filter @taktflow/infra       build
-RUN pnpm --filter @taktflow/api         build
+RUN pnpm --filter @taktflow/domain       build
+RUN pnpm --filter @taktflow/abstractions build
+RUN pnpm --filter @taktflow/application  build
+RUN pnpm --filter @taktflow/persistence  build
+RUN pnpm --filter @taktflow/infra        build
+RUN pnpm --filter @taktflow/api          build
 
 # ── production ────────────────────────────────────────────────────────────────
 FROM node:22-alpine AS production

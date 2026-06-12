@@ -1,5 +1,4 @@
 import type { Consumer, ConsumerStatus } from '@domain/entities/consumer.js';
-import type { ConsumerConfig } from '@domain/interfaces/consumer-config.interface.js';
 
 export class CreatePullConsumerResponse {
   readonly id:          string;
@@ -8,7 +7,7 @@ export class CreatePullConsumerResponse {
   readonly type:        'pull';
   readonly environment: string;
   readonly status:      ConsumerStatus;
-  readonly config:      ConsumerConfig;
+  readonly alertEmail:  string | null;
   readonly createdAt:   string;
 
   constructor(consumer: Consumer) {
@@ -18,7 +17,7 @@ export class CreatePullConsumerResponse {
     this.type        = 'pull';
     this.environment = consumer.environment;
     this.status      = consumer.status;
-    this.config      = consumer.config;
+    this.alertEmail  = consumer.alertEmail;
     this.createdAt   = consumer.createdAt.toISOString();
   }
 

@@ -5,7 +5,7 @@ export const CreateUserSchema = z.object({
   password:  z.string().min(8),
   firstName: z.string().min(1).max(100),
   lastName:  z.string().min(1).max(100),
-  role:      z.enum(['admin', 'member']).optional(),
+  role:      z.enum(['owner']).optional(),
 });
 
 export const UpdateUserSchema = z.object({
@@ -20,7 +20,7 @@ export const ChangePasswordSchema = z.object({
 
 export const UserResponseSchema = z.object({
   id:        z.string().uuid(),
-  tenantId:  z.string().uuid(),
+  tenantId:  z.string().uuid().nullable(),
   email:     z.string().email(),
   firstName: z.string(),
   lastName:  z.string(),

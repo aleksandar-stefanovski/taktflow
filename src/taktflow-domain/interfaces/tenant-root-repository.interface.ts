@@ -1,10 +1,7 @@
-import type { Tenant } from '../entities/tenant.js';
-import type { PaginationOptions } from './pagination-options.interface.js';
-import type { PagedData } from './paged-data.interface.js';
+import type { Tenant } from '@domain/entities/tenant.js';
+import type { ITenantRootReadRepository } from './readonly/tenant-root-read-repository.interface.js';
 
-export interface ITenantRootRepository {
-  findById(id: string): Promise<Tenant | null>;
-  findAll(options?: PaginationOptions): Promise<PagedData<Tenant>>;
+export interface ITenantRootRepository extends ITenantRootReadRepository {
   create(tenant: Tenant): Promise<Tenant>;
   update(id: string, updates: Partial<Tenant>): Promise<Tenant>;
 }

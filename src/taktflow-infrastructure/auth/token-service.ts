@@ -18,7 +18,7 @@ export class TokenService {
     this.refreshTokenExpiry = `${refreshTokenExpiryDays}d`;
   }
 
-  async signAccessToken(payload: { sub: string; orgId: string }): Promise<string> {
+  async signAccessToken(payload: { sub: string; orgId?: string; role: string }): Promise<string> {
     return new SignJWT({ ...payload })
       .setProtectedHeader({ alg: 'HS256' })
       .setIssuedAt()
@@ -26,7 +26,7 @@ export class TokenService {
       .sign(this.accessSecret);
   }
 
-  async signRefreshToken(payload: { sub: string; orgId: string }): Promise<string> {
+  async signRefreshToken(payload: { sub: string; orgId?: string; role: string }): Promise<string> {
     return new SignJWT({ ...payload })
       .setProtectedHeader({ alg: 'HS256' })
       .setIssuedAt()
@@ -34,12 +34,13 @@ export class TokenService {
       .sign(this.refreshSecret);
   }
 
-  async verifyAccessToken(token: string): Promise<{ sub: string; orgId: string }> {
+  async verifyAccessToken(token: string): Promise<{ sub: string; orgId?: string; role?: string }> {
     try {
       const { payload } = await jwtVerify(token, this.accessSecret);
       return {
-        sub:   String(payload.sub),
-        orgId: String(payload['orgId']),
+        sub:  String(payload.sub),
+        ...(payload['orgId'] !== undefined && { orgId: String(payload['orgId']) }),
+        ...(payload['role']  !== undefined && { role:  String(payload['role'])  }),
       };
     } catch (error) {
       if (error instanceof JoseErrors.JWTExpired) {
@@ -49,12 +50,13 @@ export class TokenService {
     }
   }
 
-  async verifyRefreshToken(token: string): Promise<{ sub: string; orgId: string }> {
+  async verifyRefreshToken(token: string): Promise<{ sub: string; orgId?: string; role?: string }> {
     try {
       const { payload } = await jwtVerify(token, this.refreshSecret);
       return {
-        sub:   String(payload.sub),
-        orgId: String(payload['orgId']),
+        sub:  String(payload.sub),
+        ...(payload['orgId'] !== undefined && { orgId: String(payload['orgId']) }),
+        ...(payload['role']  !== undefined && { role:  String(payload['role'])  }),
       };
     } catch (error) {
       if (error instanceof JoseErrors.JWTExpired) {

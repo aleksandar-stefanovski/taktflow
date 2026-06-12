@@ -1,6 +1,7 @@
 import type { ITopicRepository } from '@domain/interfaces/topic-repository.interface.js';
 import { Topic } from '@domain/entities/topic.js';
-import type { TopicConfig } from '@domain/interfaces/topic-config.interface.js';
+import { EntityKey } from '@domain/entities/entity-key.js';
+import type { TopicConfig } from '@domain/value-objects/topic-config.js';
 import { NotFoundException } from '@domain/exceptions/not-found-exception.js';
 import { ConflictException } from '@domain/exceptions/conflict-exception.js';
 
@@ -16,11 +17,11 @@ export class TopicService {
   ) {}
 
   async create(request: CreateTopicRequest & { tenantId: string }): Promise<Topic> {
-    const existing = await this.topics.findByName(request.name, request.tenantId);
+    const existing = await this.topics.findByName(request.name);
     if (existing) throw new ConflictException(`Topic '${request.name}' already exists`);
 
     const topic = new Topic({
-      tenantId: request.tenantId,
+      key:      new EntityKey(request.tenantId),
       name:     request.name,
       config:   { ...this.defaultTopicConfig, ...request.config },
     });
@@ -29,17 +30,17 @@ export class TopicService {
   }
 
   async getById(id: string, tenantId: string): Promise<Topic> {
-    const topic = await this.topics.findById(id, tenantId);
+    const topic = await this.topics.findById(id);
     if (!topic) throw new NotFoundException('Topic', id);
     return topic;
   }
 
   async update(id: string, request: UpdateTopicRequest & { tenantId: string }): Promise<Topic> {
-    const topic = await this.topics.findById(id, request.tenantId);
+    const topic = await this.topics.findById(id);
     if (!topic) throw new NotFoundException('Topic', id);
 
     if (request.name !== undefined && request.name !== topic.name) {
-      const conflict = await this.topics.findByName(request.name, request.tenantId);
+      const conflict = await this.topics.findByName(request.name);
       if (conflict) throw new ConflictException(`Topic '${request.name}' already exists`);
     }
 
@@ -47,21 +48,27 @@ export class TopicService {
       ? { ...topic.config, ...request.config }
       : undefined;
 
-    return this.topics.update(id, request.tenantId, {
+    return this.topics.update(id, {
       ...(request.name !== undefined && { name: request.name }),
       ...(mergedConfig !== undefined && { config: mergedConfig }),
     });
   }
 
   async delete(id: string, tenantId: string): Promise<void> {
-    const topic = await this.topics.findById(id, tenantId);
+    const topic = await this.topics.findById(id);
     if (!topic) throw new NotFoundException('Topic', id);
-    await this.topics.delete(id, tenantId);
+    await this.topics.delete(id);
   }
 
   async list(query: PaginationQuery & { tenantId: string }): Promise<PaginatedResult<Topic>> {
-    const options = { page: query.page, pageSize: query.pageSize };
-    const data    = await this.topics.findAll(query.tenantId, options);
-    return new PaginatedResult(data, options);
+    const limit  = query.pageSize;
+    const offset = (query.page - 1) * query.pageSize;
+
+    const [items, totalCount] = await Promise.all([
+      this.topics.findAll(limit, offset),
+      this.topics.count(),
+    ]);
+
+    return new PaginatedResult(items, totalCount, query.page, query.pageSize);
   }
 }

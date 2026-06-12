@@ -1,4 +1,4 @@
-import type { TenantMetrics } from '../entities/tenant-metrics.js';
+import type { TenantMetrics } from '@domain/entities/tenant-metrics.js';
 
 export interface ITenantMetricsRepository {
   findByTenantId(tenantId: string): Promise<TenantMetrics | null>;

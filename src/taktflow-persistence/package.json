@@ -18,8 +18,8 @@
     "migrate": "node --require tsx/cjs node_modules/drizzle-kit/bin.cjs migrate"
   },
   "dependencies": {
+    "@taktflow/abstractions": "workspace:*",
     "@taktflow/domain": "workspace:*",
-    "@taktflow/types": "workspace:*",
     "drizzle-orm": "^0.38.0",
     "pg": "^8.13.0",
     "zod": "^3.24.0"

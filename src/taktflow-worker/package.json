@@ -11,11 +11,10 @@
     "start": "tsx worker.ts"
   },
   "dependencies": {
+    "@taktflow/abstractions": "workspace:*",
     "@taktflow/domain": "workspace:*",
     "@taktflow/infra": "workspace:*",
     "@taktflow/persistence": "workspace:*",
-    "@taktflow/types": "workspace:*",
-    "@taktflow/utils": "workspace:*",
     "@types/pg": "^8.20.0",
     "cron-parser": "^4.9.0",
     "dotenv": "^16.4.0",

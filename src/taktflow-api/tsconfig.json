@@ -5,19 +5,19 @@
     "outDir": "dist",
     "paths": {
       "@domain/*":         ["../taktflow-domain/*"],
+      "@abstractions/*":   ["../taktflow-abstractions/*"],
       "@persistence/*":    ["../taktflow-persistence/*"],
       "@infrastructure/*": ["../taktflow-infrastructure/*"],
       "@application/*":    ["../taktflow-application/*"],
-      "@utils/*":          ["../../packages/taktflow-utils/*"],
       "@api/*":            ["./*"]
     }
   },
   "references": [
     { "path": "../taktflow-domain" },
+    { "path": "../taktflow-abstractions" },
     { "path": "../taktflow-persistence" },
     { "path": "../taktflow-application" },
-    { "path": "../taktflow-infrastructure" },
-    { "path": "../../packages/taktflow-utils" }
+    { "path": "../taktflow-infrastructure" }
   ],
   "include": ["routes", "base", "middleware", "plugins", "extensions", "interfaces", "config", "schemas", "constants", "app.ts", "server.ts"],
   "exclude": ["node_modules", "dist"]

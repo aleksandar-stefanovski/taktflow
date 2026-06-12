@@ -1,5 +1,5 @@
 import type { Topic } from '@domain/entities/topic.js';
-import type { TopicConfig } from '@domain/interfaces/topic-config.interface.js';
+import type { TopicConfig } from '@domain/value-objects/topic-config.js';
 
 export class TopicSummaryResponse {
   readonly id:        string;

@@ -1,5 +1,4 @@
 import type { Consumer, ConsumerType, ConsumerStatus } from '@domain/entities/consumer.js';
-import type { ConsumerConfig } from '@domain/interfaces/consumer-config.interface.js';
 
 export class ConsumerSummaryResponse {
   readonly id:          string;
@@ -9,7 +8,7 @@ export class ConsumerSummaryResponse {
   readonly url:         string | null;
   readonly environment: string;
   readonly status:      ConsumerStatus;
-  readonly config:      ConsumerConfig;
+  readonly alertEmail:  string | null;
   readonly createdAt:   string;
   readonly updatedAt:   string;
 
@@ -21,7 +20,7 @@ export class ConsumerSummaryResponse {
     this.url         = consumer.url;
     this.environment = consumer.environment;
     this.status      = consumer.status;
-    this.config      = consumer.config;
+    this.alertEmail  = consumer.alertEmail;
     this.createdAt   = consumer.createdAt.toISOString();
     this.updatedAt   = consumer.updatedAt.toISOString();
   }

@@ -2,7 +2,7 @@ import type { User } from '@domain/entities/user.js';
 
 export class UserResponse {
   readonly id:        string;
-  readonly tenantId:  string;
+  readonly tenantId:  string | null;
   readonly email:     string;
   readonly firstName: string;
   readonly lastName:  string;
@@ -13,7 +13,7 @@ export class UserResponse {
 
   constructor(user: User) {
     this.id        = user.id;
-    this.tenantId  = user.tenantId;
+    this.tenantId  = user.key.tenantId;
     this.email     = user.email;
     this.firstName = user.firstName;
     this.lastName  = user.lastName;

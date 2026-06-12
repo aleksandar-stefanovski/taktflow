@@ -1,4 +1,4 @@
-import { randomUUID } from 'crypto';
+import { randomUUID } from 'node:crypto';
 
 import type { IDeadLetterEventRepository } from '@domain/interfaces/dead-letter-event-repository.interface.js';
 import type { IConsumerRepository } from '@domain/interfaces/consumer-repository.interface.js';
@@ -18,23 +18,29 @@ export class DeadLetterService {
   ) {}
 
   async list(query: ListDeadLetterEventsQuery): Promise<PaginatedResult<DeadLetterEvent>> {
-    const options = { page: query.page, pageSize: query.pageSize };
-    const data    = await this.dlq.findAll(query.tenantId, options);
-    return new PaginatedResult(data, options);
+    const limit  = query.pageSize;
+    const offset = (query.page - 1) * query.pageSize;
+
+    const [items, totalCount] = await Promise.all([
+      this.dlq.findAll(limit, offset),
+      this.dlq.count(),
+    ]);
+
+    return new PaginatedResult(items, totalCount, query.page, query.pageSize);
   }
 
   async replay(id: string, tenantId: string): Promise<void> {
-    const dlqEvent = await this.dlq.findById(id, tenantId);
+    const dlqEvent = await this.dlq.findById(id);
     if (!dlqEvent) throw new NotFoundException('DeadLetterEvent', id);
     if (dlqEvent.replayed) throw new ConflictException(`DeadLetterEvent ${id} has already been replayed`);
 
-    const consumer = await this.consumers.findById(dlqEvent.consumerId, tenantId);
+    const consumer = await this.consumers.findById(dlqEvent.consumerId);
     if (!consumer) throw new NotFoundException('Consumer', dlqEvent.consumerId);
 
     await this.queue.enqueue({
       id:          randomUUID(),
       eventId:     dlqEvent.eventId,
-      tenantId:    dlqEvent.tenantId,
+      tenantId:    dlqEvent.key.tenantId!,
       topicId:     consumer.topicId,
       consumerId:  dlqEvent.consumerId,
       payload:     dlqEvent.payloadSnapshot,
@@ -42,6 +48,6 @@ export class DeadLetterService {
       scheduledAt: new Date(),
     });
 
-    await this.dlq.update(id, tenantId, { replayed: true, replayedAt: new Date() });
+    await this.dlq.update(id, { replayed: true, replayedAt: new Date() });
   }
 }

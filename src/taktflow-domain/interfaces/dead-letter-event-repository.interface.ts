@@ -1,8 +1,7 @@
-import type { DeadLetterEvent } from '../entities/dead-letter-event.js';
-import type { FailureAlertRow } from './failure-alert-row.interface.js';
-import type { ITenantRepository } from './tenant-repository.interface.js';
+import type { DeadLetterEvent } from '@domain/entities/dead-letter-event.js';
+import type { IDeadLetterReadRepository } from './readonly/dead-letter-read-repository.interface.js';
+import type { IEntityBaseRepository } from './entity-base-repository.interface.js';
 
-export interface IDeadLetterEventRepository extends ITenantRepository<DeadLetterEvent> {
-  findUnreplayed(tenantId: string): Promise<DeadLetterEvent[]>;
-  findOverFailureThreshold(): Promise<FailureAlertRow[]>;
-}
+export interface IDeadLetterEventRepository
+  extends IDeadLetterReadRepository,
+    IEntityBaseRepository<DeadLetterEvent> {}

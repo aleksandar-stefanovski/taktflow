@@ -1,13 +1,13 @@
 import { config } from 'dotenv';
 config({ path: '.env.local' });
 
-import { connectDatabase, runMigrations } from '@persistence/database.js';
-import { databaseConfig } from './config/database.config.js';
-import { serverConfig }   from './config/server.config.js';
-import { buildApp } from './app.js';
+const { connectDatabase, runMigrations } = await import('@persistence/database.js');
+const { databaseConfig } = await import('./config/database.config.js');
+const { serverConfig }   = await import('./config/server.config.js');
+const { buildApp }       = await import('./app.js');
 
 async function bootstrap(): Promise<void> {
-  const db  = await connectDatabase(databaseConfig.DATABASE_URL);
+  const db  = await connectDatabase(databaseConfig);
   await runMigrations(db);
   const app = await buildApp(db);
 

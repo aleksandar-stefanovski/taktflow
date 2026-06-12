@@ -1,12 +1,7 @@
-import type { Consumer } from '../entities/consumer.js';
-import type { ITenantRepository } from './tenant-repository.interface.js';
-import type { PaginationOptions } from './pagination-options.interface.js';
-import type { PagedData } from './paged-data.interface.js';
+import type { Consumer } from '@domain/entities/consumer.js';
+import type { IConsumerReadRepository } from './readonly/consumer-read-repository.interface.js';
+import type { IEntityBaseRepository } from './entity-base-repository.interface.js';
 
-export interface IConsumerRepository extends ITenantRepository<Consumer> {
-  findByTopicId(
-    topicId: string,
-    tenantId: string,
-    options?: PaginationOptions,
-  ): Promise<PagedData<Consumer>>;
-}
+export interface IConsumerRepository
+  extends IConsumerReadRepository,
+    IEntityBaseRepository<Consumer> {}

@@ -2,6 +2,7 @@ import type { FastifyRequest, FastifyReply } from 'fastify';
 
 import { UnauthorizedException } from '@domain/exceptions/unauthorized-exception.js';
 import { TokenService } from '@infrastructure/auth/token-service.js';
+import { tenantContextStore } from '@infrastructure/context/tenant-context-store.js';
 import { authConfig } from '@api/config/auth.config.js';
 
 const tokenService = new TokenService(
@@ -22,13 +23,21 @@ export async function jwtMiddleware(
 
   const token = authHeader.slice(7);
 
-  let payload: { sub: string; orgId: string };
+  let payload: { sub: string; orgId?: string; role?: string };
   try {
     payload = await tokenService.verifyAccessToken(token);
   } catch {
     throw new UnauthorizedException('Invalid or expired access token');
   }
 
+  if (!payload.orgId) {
+    throw new UnauthorizedException('Tenant access required');
+  }
+
   request.tenantId = payload.orgId;
   request.userId   = payload.sub;
+  request.role     = payload.role;
+
+  const context = tenantContextStore.getStore();
+  if (context) context.tenantId = payload.orgId;
 }

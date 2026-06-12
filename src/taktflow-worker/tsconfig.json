@@ -8,6 +8,7 @@
       "@persistence/*":    ["../taktflow-persistence/*"],
       "@infrastructure/*": ["../taktflow-infrastructure/*"],
       "@application/*":    ["../taktflow-application/*"],
+      "@abstractions/*":   ["../taktflow-abstractions/*"],
       "@worker/*":         ["./*"]
     }
   },
@@ -15,7 +16,8 @@
     { "path": "../taktflow-domain" },
     { "path": "../taktflow-persistence" },
     { "path": "../taktflow-infrastructure" },
-    { "path": "../taktflow-application" }
+    { "path": "../taktflow-application" },
+    { "path": "../taktflow-abstractions" }
   ],
   "include": ["engine", "services", "interfaces", "models", "helpers", "extensions", "config", "worker.ts"],
   "exclude": ["node_modules", "dist"]

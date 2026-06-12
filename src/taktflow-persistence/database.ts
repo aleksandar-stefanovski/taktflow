@@ -9,12 +9,17 @@ import * as schema from './schema/index.js';
 
 export type DrizzleDb = ReturnType<typeof drizzle>;
 
-export async function connectDatabase(url: string): Promise<DrizzleDb> {
+export async function connectDatabase(config: {
+  url:                string;
+  poolMax:            number;
+  idleTimeoutMs:      number;
+  connectionTimeoutMs: number;
+}): Promise<DrizzleDb> {
   const pool = new Pool({
-    connectionString: url,
-    max: 20,
-    idleTimeoutMillis: 30_000,
-    connectionTimeoutMillis: 5_000,
+    connectionString:        config.url,
+    max:                     config.poolMax,
+    idleTimeoutMillis:       config.idleTimeoutMs,
+    connectionTimeoutMillis: config.connectionTimeoutMs,
   });
 
   const client = await pool.connect();

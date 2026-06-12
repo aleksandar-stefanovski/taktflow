@@ -1,0 +1,16 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "dist",
+    "paths": {
+      "@domain/*":         ["../taktflow-domain/*"],
+      "@abstractions/*":   ["./*"]
+    }
+  },
+  "references": [
+    { "path": "../taktflow-domain" }
+  ],
+  "include": ["interfaces"],
+  "exclude": ["node_modules", "dist"]
+}

@@ -1,7 +1,5 @@
 export type { IConsumerHealth } from './consumer-health.interface.js';
 export type { IUsageResult } from './usage-result.interface.js';
-export type { IUpdateTenantCommand } from './update-tenant-command.interface.js';
-export type { CreateApiKeyResult } from './create-api-key-result.interface.js';
 export type { ClaimedEvent } from './claimed-event.interface.js';
 export type { EnqueueEventCommand } from './enqueue-event-command.interface.js';
 export type { IEventQueueService } from './event-queue-service.interface.js';

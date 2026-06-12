@@ -1,28 +1,65 @@
-import { and, eq, sql } from 'drizzle-orm';
-import type { PgTableWithColumns, TableConfig } from 'drizzle-orm/pg-core';
+import { and, eq, sql, type SQL } from 'drizzle-orm';
 
 import type { DrizzleDb } from '../database.js';
 import { deadLetterEvents } from '../schema/dead-letter-events.js';
 import type { DeadLetterEventRow } from '../schema/dead-letter-events.js';
 import { DeadLetterEvent } from '@domain/entities/dead-letter-event.js';
 import type { IDeadLetterEventRepository } from '@domain/interfaces/dead-letter-event-repository.interface.js';
-import type { FailureAlertRow } from '@domain/interfaces/failure-alert-row.interface.js';
-import { BaseTenantRepository } from './base-tenant-repository.js';
+import type { ICurrentTenantProvider } from '@domain/interfaces/current-tenant-provider.interface.js';
+import type { FailureAlertRow } from '@domain/interfaces/readonly/failure-alert-row.interface.js';
+import { DeadLetterReadonlyRepository } from './readonly/dead-letter-readonly-repository.js';
+import { EntityBaseRepository } from './entity-base-repository.js';
 
 export class DeadLetterEventRepository
-  extends BaseTenantRepository<DeadLetterEvent>
+  extends EntityBaseRepository<DeadLetterEvent>
   implements IDeadLetterEventRepository {
 
-  constructor(db: DrizzleDb) {
-    super(db);
+  constructor(db: DrizzleDb, tenantProvider: ICurrentTenantProvider) {
+    super(db, deadLetterEvents, tenantProvider);
   }
 
-  protected get table(): PgTableWithColumns<TableConfig> {
-    return deadLetterEvents as unknown as PgTableWithColumns<TableConfig>;
+  protected override requiredFilters(): SQL {
+    return eq(this.table['tenantId']!, this.tenantId);
   }
 
   protected mapToDomain(row: Record<string, unknown>): DeadLetterEvent {
-    return DeadLetterEventRepository.toDomain(row as DeadLetterEventRow);
+    return DeadLetterReadonlyRepository.toDomain(row as DeadLetterEventRow);
+  }
+
+  async findUnreplayed(): Promise<DeadLetterEvent[]> {
+    const rows = await this.db
+      .select()
+      .from(deadLetterEvents)
+      .where(and(eq(deadLetterEvents.tenantId, this.tenantId), eq(deadLetterEvents.replayed, false)));
+
+    return rows.map(DeadLetterReadonlyRepository.toDomain);
+  }
+
+  async findOverFailureThreshold(): Promise<FailureAlertRow[]> {
+    // NOTE: raw SQL required — CTE with JSONB extraction and cross-table threshold comparison not expressible in Drizzle
+    const result = await this.db.execute<{
+      consumerId:   string;
+      tenantId:     string;
+      failureCount: number;
+      alertEmail:   string;
+    }>(sql`
+      WITH recent_failures AS (
+        SELECT consumer_id, tenant_id, COUNT(*)::int AS failure_count
+        FROM dead_letter_events
+        WHERE created_at > NOW() - INTERVAL '24 hours'
+        GROUP BY consumer_id, tenant_id
+      )
+      SELECT rf.consumer_id    AS "consumerId",
+             rf.tenant_id      AS "tenantId",
+             rf.failure_count  AS "failureCount",
+             c.alert_email     AS "alertEmail"
+      FROM recent_failures rf
+      JOIN consumers c ON c.id = rf.consumer_id
+      WHERE rf.failure_count >= c.alert_after_failures
+        AND c.alert_email IS NOT NULL
+    `);
+
+    return result.rows;
   }
 
   async create(entity: DeadLetterEvent): Promise<DeadLetterEvent> {
@@ -30,7 +67,7 @@ export class DeadLetterEventRepository
       .insert(deadLetterEvents)
       .values({
         id:              entity.id,
-        tenantId:        entity.tenantId,
+        tenantId:        entity.key.tenantId!,
         eventDeliveryId: entity.eventDeliveryId,
         eventId:         entity.eventId,
         consumerId:      entity.consumerId,
@@ -45,10 +82,10 @@ export class DeadLetterEventRepository
 
     const [row] = rows;
     if (!row) throw new Error('Insert returned no rows');
-    return DeadLetterEventRepository.toDomain(row);
+    return DeadLetterReadonlyRepository.toDomain(row);
   }
 
-  async update(id: string, tenantId: string, updates: Partial<DeadLetterEvent>): Promise<DeadLetterEvent> {
+  async update(id: string, updates: Partial<DeadLetterEvent>): Promise<DeadLetterEvent> {
     const rows = await this.db
       .update(deadLetterEvents)
       .set({
@@ -56,63 +93,17 @@ export class DeadLetterEventRepository
         ...(updates.replayedAt !== undefined && { replayedAt: updates.replayedAt }),
         updatedAt: new Date(),
       })
-      .where(and(eq(deadLetterEvents.id, id), eq(deadLetterEvents.tenantId, tenantId)))
+      .where(and(eq(deadLetterEvents.id, id), eq(deadLetterEvents.tenantId, this.tenantId)))
       .returning();
 
     const [row] = rows;
     if (!row) throw new Error('Update returned no rows');
-    return DeadLetterEventRepository.toDomain(row);
+    return DeadLetterReadonlyRepository.toDomain(row);
   }
 
-  async findUnreplayed(tenantId: string): Promise<DeadLetterEvent[]> {
-    const rows = await this.db
-      .select()
-      .from(deadLetterEvents)
-      .where(and(eq(deadLetterEvents.tenantId, tenantId), eq(deadLetterEvents.replayed, false)));
-
-    return rows.map(DeadLetterEventRepository.toDomain);
-  }
-
-  async findOverFailureThreshold(): Promise<FailureAlertRow[]> {
-    // NOTE: raw SQL required — CTE with JSONB extraction and cross-table threshold comparison not expressible in Drizzle
-    const result = await this.db.execute<{
-      consumerId: string;
-      tenantId: string;
-      failureCount: number;
-      alertEmail: string;
-    }>(sql`
-      WITH recent_failures AS (
-        SELECT consumer_id, tenant_id, COUNT(*)::int AS failure_count
-        FROM dead_letter_events
-        WHERE created_at > NOW() - INTERVAL '24 hours'
-        GROUP BY consumer_id, tenant_id
-      )
-      SELECT rf.consumer_id AS "consumerId",
-             rf.tenant_id   AS "tenantId",
-             rf.failure_count AS "failureCount",
-             c.config->>'alertEmail' AS "alertEmail"
-      FROM recent_failures rf
-      JOIN consumers c ON c.id = rf.consumer_id
-      WHERE rf.failure_count >= (c.config->>'alertAfterFailures')::int
-        AND c.config->>'alertEmail' IS NOT NULL
-    `);
-
-    return result.rows;
-  }
-
-  static toDomain(row: DeadLetterEventRow): DeadLetterEvent {
-    return new DeadLetterEvent({
-      id:              row.id,
-      tenantId:        row.tenantId,
-      eventDeliveryId: row.eventDeliveryId,
-      eventId:         row.eventId,
-      consumerId:      row.consumerId,
-      failureReason:   row.failureReason,
-      payloadSnapshot: row.payloadSnapshot as Record<string, unknown>,
-      replayed:        row.replayed,
-      replayedAt:      row.replayedAt ?? null,
-      createdAt:       row.createdAt,
-      updatedAt:       row.updatedAt,
-    });
+  override async delete(id: string): Promise<void> {
+    await this.db
+      .delete(deadLetterEvents)
+      .where(and(eq(deadLetterEvents.id, id), eq(deadLetterEvents.tenantId, this.tenantId)));
   }
 }

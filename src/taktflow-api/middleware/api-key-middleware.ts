@@ -1,8 +1,9 @@
-import { createHash, timingSafeEqual } from 'crypto';
+import { createHash, timingSafeEqual } from 'node:crypto';
 
 import type { FastifyRequest, FastifyReply } from 'fastify';
 
 import { UnauthorizedException } from '@domain/exceptions/unauthorized-exception.js';
+import { tenantContextStore } from '@infrastructure/context/tenant-context-store.js';
 import { HTTP_CONSTANTS } from '@api/constants/http.constants.js';
 
 export async function apiKeyMiddleware(
@@ -27,7 +28,10 @@ export async function apiKeyMiddleware(
 
   request.tenantId = record.tenantId;
 
+  const context = tenantContextStore.getStore();
+  if (context) context.tenantId = record.tenantId;
+
   void request.server.repos.apiKeys
-    .update(record.id, record.tenantId, { lastUsed: new Date() })
+    .update(record.id, { lastUsed: new Date() })
     .catch(() => {});
 }
