@@ -1,4 +1,4 @@
-import type { User } from '@domain/entities/user.js';
+import type { User } from '@taktflow/domain/entities/user.js';
 
 export class LoginResponse {
   readonly accessToken:  string;

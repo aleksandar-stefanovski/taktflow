@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
-import { LoginSchema, RefreshTokenSchema } from '@application/validators/auth-validators.js';
-import { RegisterTenantSchema }            from '@application/validators/tenant-validators.js';
+import { LoginSchema, RefreshTokenSchema } from '@taktflow/application/validators/auth-validators.js';
+import { RegisterTenantSchema }            from '@taktflow/application/validators/tenant-validators.js';
 import { zodToJsonSchema, ErrorResponseSchema } from '@api/swagger/api-schemas.js';
 
 const LoginUserSchema = z.object({

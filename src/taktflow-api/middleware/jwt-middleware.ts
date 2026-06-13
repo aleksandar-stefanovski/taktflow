@@ -1,10 +1,10 @@
 import type { FastifyRequest, FastifyReply } from 'fastify';
 
-import { NotFoundException } from '@domain/exceptions/not-found-exception.js';
-import { UnauthorizedException } from '@domain/exceptions/unauthorized-exception.js';
-import { TenantDeletedException } from '@domain/exceptions/tenant-deleted-exception.js';
-import { TokenService } from '@infrastructure/auth/token-service.js';
-import { tenantContextStore } from '@infrastructure/context/tenant-context-store.js';
+import { NotFoundException } from '@taktflow/domain/exceptions/not-found-exception.js';
+import { UnauthorizedException } from '@taktflow/domain/exceptions/unauthorized-exception.js';
+import { TenantDeletedException } from '@taktflow/domain/exceptions/tenant-deleted-exception.js';
+import { TokenService } from '@taktflow/infra/auth/token-service.js';
+import { tenantContextStore } from '@taktflow/infra/context/tenant-context-store.js';
 import { authConfig } from '@api/config/auth.config.js';
 
 const tokenService = new TokenService(

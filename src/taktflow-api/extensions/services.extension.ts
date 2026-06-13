@@ -3,25 +3,25 @@ import { plansConfig }   from '@api/config/plans.config.js';
 import { defaultsConfig } from '@api/config/defaults.config.js';
 import { serverConfig }  from '@api/config/server.config.js';
 
-import type { DrizzleDb } from '@persistence/database.js';
-import { UserRootRepository }      from '@persistence/repositories/user-root-repository.js';
-import { TenantMetricsRepository } from '@persistence/repositories/tenant-metrics-repository.js';
+import type { DrizzleDb } from '@taktflow/persistence/database.js';
+import { UserRootRepository }      from '@taktflow/persistence/repositories/user-root-repository.js';
+import { TenantMetricsRepository } from '@taktflow/persistence/repositories/tenant-metrics-repository.js';
 
-import { PostgresQueueEngine } from '@persistence/queue/postgres-queue-engine.js';
-import { TokenService }        from '@infrastructure/auth/token-service.js';
-import { PasswordService }     from '@infrastructure/auth/password-service.js';
+import { PostgresQueueEngine } from '@taktflow/persistence/queue/postgres-queue-engine.js';
+import { TokenService }        from '@taktflow/infra/auth/token-service.js';
+import { PasswordService }     from '@taktflow/infra/auth/password-service.js';
 
-import { ApiKeyService }     from '@application/services/api-key.service.js';
-import { AuthService }       from '@application/services/auth.service.js';
-import { ConsumerService }   from '@application/services/consumer.service.js';
-import { DeadLetterService } from '@application/services/dead-letter.service.js';
-import { EventService }      from '@application/services/event.service.js';
-import { DashboardService }  from '@application/services/dashboard.service.js';
-import { ScheduleService }   from '@application/services/schedule.service.js';
-import { TenantService }     from '@application/services/tenant.service.js';
-import { TopicService }      from '@application/services/topic.service.js';
-import { UserService }       from '@application/services/user.service.js';
-import type { IUsageService } from '@application/interfaces/usage-service.interface.js';
+import { ApiKeyService }     from '@taktflow/application/services/api-key.service.js';
+import { AuthService }       from '@taktflow/application/services/auth.service.js';
+import { ConsumerService }   from '@taktflow/application/services/consumer.service.js';
+import { DeadLetterService } from '@taktflow/application/services/dead-letter.service.js';
+import { EventService }      from '@taktflow/application/services/event.service.js';
+import { DashboardService }  from '@taktflow/application/services/dashboard.service.js';
+import { ScheduleService }   from '@taktflow/application/services/schedule.service.js';
+import { TenantService }     from '@taktflow/application/services/tenant.service.js';
+import { TopicService }      from '@taktflow/application/services/topic.service.js';
+import { UserService }       from '@taktflow/application/services/user.service.js';
+import type { IUsageService } from '@taktflow/application/interfaces/usage-service.interface.js';
 
 import type { ApplicationRepositories }   from '@api/interfaces/application-repositories.interface.js';
 import type { ApplicationDomainServices } from '@api/interfaces/application-domain-services.interface.js';
@@ -55,7 +55,6 @@ export function buildDomainServices(
     tenants:    new TenantService(repos.tenants, usage),
     topics:     new TopicService(repos.topics, {
       retentionDays: defaultsConfig.TOPIC_DEFAULT_RETENTION_DAYS,
-      maxPayloadBytes: defaultsConfig.TOPIC_DEFAULT_MAX_PAYLOAD_BYTES,
       ordering:      defaultsConfig.TOPIC_DEFAULT_ORDERING,
     }),
     users:      new UserService(repos.users, passwords),

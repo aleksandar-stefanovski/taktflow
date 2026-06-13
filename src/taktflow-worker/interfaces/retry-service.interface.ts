@@ -1,8 +1,8 @@
-import type { ClaimedEvent } from '@domain/types/claimed-event.type.js';
+import type { ClaimedEvent } from '@taktflow/domain/types/claimed-event.type.js';
 
 export interface IRetryService {
   start(): void;
-  stop(): void;
+  stop(): Promise<void>;
   scheduleRetryOrDeadLetter(
     delivery: ClaimedEvent,
     reason: string,

@@ -1,16 +1,17 @@
-import { calcRetryDelay } from '@utils/helpers/retry.helper.js';
+import { calcRetryDelay } from '@taktflow/utils/helpers/retry.helper.js';
 
-import type { IEventDeliveryRepository } from '@domain/interfaces/event-delivery-repository.interface.js';
-import type { IEventQueueService }       from '@domain/interfaces/event-queue-service.interface.js';
+import type { IEventDeliveryRepository } from '@taktflow/domain/interfaces/event-delivery-repository.interface.js';
+import type { IEventQueueService }       from '@taktflow/domain/interfaces/event-queue-service.interface.js';
 import type { LoggerMessages }           from '../extensions/logger-message.extension.js';
 import type { WorkerConfig }             from '../config/worker.config.js';
-import type { ClaimedEvent }             from '@domain/types/claimed-event.type.js';
+import type { ClaimedEvent }             from '@taktflow/domain/types/claimed-event.type.js';
 import type { IMetricsService }          from '../interfaces/metrics-service.interface.js';
 import type { IRetryService }            from '../interfaces/retry-service.interface.js';
+import { RecurringTask }                 from '../helpers/recurring-task.helper.js';
 
 export class RetryService implements IRetryService {
-  private retryIntervalHandle:  NodeJS.Timeout | null = null;
-  private unstuckIntervalHandle: NodeJS.Timeout | null = null;
+  private readonly resetTask:   RecurringTask;
+  private readonly unstuckTask: RecurringTask;
 
   constructor(
     private readonly deliveries: IEventDeliveryRepository,
@@ -18,31 +19,26 @@ export class RetryService implements IRetryService {
     private readonly logger:     LoggerMessages,
     private readonly config:     WorkerConfig,
     private readonly metrics:    IMetricsService,
-  ) {}
-
-  start(): void {
-    this.retryIntervalHandle = setInterval(() => {
-      void this.resetTimedOutAcks().catch((error: unknown) => {
-        this.logger.logWorkerLoopError('retry', error as Error);
-      });
-    }, this.config.WORKER_RETRY_INTERVAL_MS);
-
-    this.unstuckIntervalHandle = setInterval(() => {
-      void this.releaseStuckDeliveries().catch((error: unknown) => {
-        this.logger.logWorkerLoopError('unstuck', error as Error);
-      });
-    }, this.config.WORKER_UNSTUCK_INTERVAL_MS);
+  ) {
+    this.resetTask = new RecurringTask(
+      this.config.WORKER_RETRY_INTERVAL_MS,
+      () => this.resetTimedOutAcks(),
+      error => this.logger.logWorkerLoopError('retry', error),
+    );
+    this.unstuckTask = new RecurringTask(
+      this.config.WORKER_UNSTUCK_INTERVAL_MS,
+      () => this.releaseStuckDeliveries(),
+      error => this.logger.logWorkerLoopError('unstuck', error),
+    );
   }
 
-  stop(): void {
-    if (this.retryIntervalHandle) {
-      clearInterval(this.retryIntervalHandle);
-      this.retryIntervalHandle = null;
-    }
-    if (this.unstuckIntervalHandle) {
-      clearInterval(this.unstuckIntervalHandle);
-      this.unstuckIntervalHandle = null;
-    }
+  start(): void {
+    this.resetTask.start();
+    this.unstuckTask.start();
+  }
+
+  async stop(): Promise<void> {
+    await Promise.all([this.resetTask.stop(), this.unstuckTask.stop()]);
   }
 
   async scheduleRetryOrDeadLetter(
@@ -51,9 +47,7 @@ export class RetryService implements IRetryService {
     responseStatus?: number,
     responseBody?: string,
   ): Promise<void> {
-    const maxAttempts = this.config.WORKER_DEFAULT_RETRY_ATTEMPTS;
-
-    if (delivery.attempt >= maxAttempts) {
+    if (delivery.attempt >= this.config.WORKER_DEFAULT_RETRY_ATTEMPTS) {
       await this.queue.moveToDeadLetter(delivery.id, reason, responseStatus, responseBody);
       this.metrics.recordFailure(delivery.tenantId);
       this.logger.logEventMovedToDeadLetter(delivery.eventId, delivery.consumerId, reason);

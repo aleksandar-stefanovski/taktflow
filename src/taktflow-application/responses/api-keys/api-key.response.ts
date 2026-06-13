@@ -1,4 +1,4 @@
-import type { ApiKey } from '@domain/entities/api-key.js';
+import type { ApiKey } from '@taktflow/domain/entities/api-key.js';
 
 export class ApiKeyResponse {
   readonly id:          string;

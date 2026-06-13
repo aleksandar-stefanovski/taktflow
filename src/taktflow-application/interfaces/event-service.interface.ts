@@ -1,4 +1,4 @@
-import type { Event }                from '@domain/entities/event.js';
+import type { Event }                from '@taktflow/domain/entities/event.js';
 import type { ProduceEventRequest }  from '../requests/events/produce-event.request.js';
 import type { ListEventsQuery }      from '../requests/events/list-events.request.js';
 import type { PaginatedResponse }      from '../responses/paginated-response.js';

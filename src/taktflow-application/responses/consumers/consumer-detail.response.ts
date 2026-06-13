@@ -1,4 +1,4 @@
-import type { Consumer, ConsumerType, ConsumerStatus } from '@domain/entities/consumer.js';
+import type { Consumer, ConsumerType, ConsumerStatus } from '@taktflow/domain/entities/consumer.js';
 
 export class ConsumerDetailResponse {
   readonly id:          string;

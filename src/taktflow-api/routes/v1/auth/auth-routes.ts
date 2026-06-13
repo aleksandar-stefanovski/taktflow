@@ -3,9 +3,9 @@ import type { FastifyInstance } from 'fastify';
 import {
   LoginSchema,
   RefreshTokenSchema,
-} from '@application/validators/auth-validators.js';
-import { RegisterTenantSchema } from '@application/validators/tenant-validators.js';
-import { RefreshTokenResponse } from '@application/responses/auth/refresh-token.response.js';
+} from '@taktflow/application/validators/auth-validators.js';
+import { RegisterTenantSchema } from '@taktflow/application/validators/tenant-validators.js';
+import { RefreshTokenResponse } from '@taktflow/application/responses/auth/refresh-token.response.js';
 
 import { jwtMiddleware } from '@api/middleware/jwt-middleware.js';
 import { authSchemas }   from './auth.schemas.js';

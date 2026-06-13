@@ -1,12 +1,12 @@
-import type { ITenantRootRepository } from '@domain/interfaces/tenant-root-repository.interface.js';
-import type { IUserRootRepository } from '@domain/interfaces/user-root-repository.interface.js';
-import { Tenant } from '@domain/entities/tenant.js';
-import { User } from '@domain/entities/user.js';
-import { EntityKey } from '@domain/entities/entity-key.js';
-import { ConflictException } from '@domain/exceptions/conflict-exception.js';
-import { NotFoundException } from '@domain/exceptions/not-found-exception.js';
-import { UnauthorizedException } from '@domain/exceptions/unauthorized-exception.js';
-import { TenantDeletedException } from '@domain/exceptions/tenant-deleted-exception.js';
+import type { ITenantRootRepository } from '@taktflow/domain/interfaces/tenant-root-repository.interface.js';
+import type { IUserRootRepository } from '@taktflow/domain/interfaces/user-root-repository.interface.js';
+import { Tenant } from '@taktflow/domain/entities/tenant.js';
+import { User } from '@taktflow/domain/entities/user.js';
+import { EntityKey } from '@taktflow/domain/entities/entity-key.js';
+import { ConflictException } from '@taktflow/domain/exceptions/conflict-exception.js';
+import { NotFoundException } from '@taktflow/domain/exceptions/not-found-exception.js';
+import { UnauthorizedException } from '@taktflow/domain/exceptions/unauthorized-exception.js';
+import { TenantDeletedException } from '@taktflow/domain/exceptions/tenant-deleted-exception.js';
 
 import type { ITokenService }    from '../contracts/token-service.interface.js';
 import type { IPasswordService } from '../contracts/password-service.interface.js';

@@ -1,6 +1,6 @@
 import { and, eq } from 'drizzle-orm';
 
-import type { EntityBase } from '@domain/entities/entity-base.js';
+import type { EntityBase } from '@taktflow/domain/entities/entity-base.js';
 import { EntityBaseReadonlyRepository } from './readonly/entity-base-readonly-repository.js';
 
 export abstract class EntityBaseRepository<T extends EntityBase>

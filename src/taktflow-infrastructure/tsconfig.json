@@ -4,8 +4,6 @@
     "rootDir": ".",
     "outDir": "dist",
     "paths": {
-      "@domain/*":         ["../taktflow-domain/*"],
-      "@persistence/*":    ["../taktflow-persistence/*"],
       "@infrastructure/*": ["./*"]
     }
   },

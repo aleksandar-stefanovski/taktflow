@@ -1,8 +1,8 @@
-import type { IScheduleRepository } from '@domain/interfaces/schedule-repository.interface.js';
-import type { ITopicRepository } from '@domain/interfaces/topic-repository.interface.js';
-import { Schedule } from '@domain/entities/schedule.js';
-import { EntityKey } from '@domain/entities/entity-key.js';
-import { NotFoundException } from '@domain/exceptions/not-found-exception.js';
+import type { IScheduleRepository } from '@taktflow/domain/interfaces/schedule-repository.interface.js';
+import type { ITopicRepository } from '@taktflow/domain/interfaces/topic-repository.interface.js';
+import { Schedule } from '@taktflow/domain/entities/schedule.js';
+import { EntityKey } from '@taktflow/domain/entities/entity-key.js';
+import { NotFoundException } from '@taktflow/domain/exceptions/not-found-exception.js';
 
 import type { IScheduleService }      from '../interfaces/schedule-service.interface.js';
 import type { CreateScheduleRequest } from '../requests/schedules/create-schedule.request.js';

@@ -3,9 +3,9 @@ import { and, eq, type SQL } from 'drizzle-orm';
 import type { DrizzleDb } from '../../database.js';
 import { deadLetterEvents } from '../../schema/dead-letter-events.js';
 import type { DeadLetterEventRow } from '../../schema/dead-letter-events.js';
-import { DeadLetterEvent } from '@domain/entities/dead-letter-event.js';
-import { EntityKey } from '@domain/entities/entity-key.js';
-import type { ICurrentTenantProvider } from '@domain/interfaces/current-tenant-provider.interface.js';
+import { DeadLetterEvent } from '@taktflow/domain/entities/dead-letter-event.js';
+import { EntityKey } from '@taktflow/domain/entities/entity-key.js';
+import type { ICurrentTenantProvider } from '@taktflow/domain/interfaces/current-tenant-provider.interface.js';
 import { EntityBaseReadonlyRepository } from './entity-base-readonly-repository.js';
 
 export class DeadLetterReadonlyRepository extends EntityBaseReadonlyRepository<DeadLetterEvent> {

@@ -1,15 +1,14 @@
 import { z } from 'zod';
 
-import { CreateTopicSchema, UpdateTopicSchema } from '@application/validators/topic-validators.js';
+import { CreateTopicSchema, UpdateTopicSchema } from '@taktflow/application/validators/topic-validators.js';
 import { PaginationSchema }                     from '@api/swagger/pagination-schema.js';
 import { zodToJsonSchema, paginatedResponseSchema, ErrorResponseSchema } from '@api/swagger/api-schemas.js';
 
 const idParams = { type: 'object', properties: { id: { type: 'string', format: 'uuid' } }, required: ['id'] } as const;
 
 const TopicConfigSchema = z.object({
-  retentionDays:   z.number().int(),
-  maxPayloadBytes: z.number().int(),
-  ordering:        z.string(),
+  retentionDays: z.number().int(),
+  ordering:      z.string(),
 });
 
 const TopicDetailSchema = z.object({

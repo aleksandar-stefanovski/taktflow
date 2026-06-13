@@ -4,7 +4,7 @@ import {
   CreateUserSchema,
   UpdateUserSchema,
   ChangePasswordSchema,
-} from '@application/validators/user-validators.js';
+} from '@taktflow/application/validators/user-validators.js';
 import { zodToJsonSchema, ErrorResponseSchema } from '@api/swagger/api-schemas.js';
 
 const UserSchema = z.object({

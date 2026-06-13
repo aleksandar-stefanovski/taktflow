@@ -3,9 +3,9 @@ import { and, eq, isNull } from 'drizzle-orm';
 import type { DrizzleDb } from '../database.js';
 import { users } from '../schema/users.js';
 import type { UserRow } from '../schema/users.js';
-import { User } from '@domain/entities/user.js';
-import type { IUserRepository } from '@domain/interfaces/user-repository.interface.js';
-import type { ICurrentTenantProvider } from '@domain/interfaces/current-tenant-provider.interface.js';
+import { User } from '@taktflow/domain/entities/user.js';
+import type { IUserRepository } from '@taktflow/domain/interfaces/user-repository.interface.js';
+import type { ICurrentTenantProvider } from '@taktflow/domain/interfaces/current-tenant-provider.interface.js';
 import { UserReadonlyRepository } from './readonly/user-readonly-repository.js';
 import { EntityBaseRepository } from './entity-base-repository.js';
 

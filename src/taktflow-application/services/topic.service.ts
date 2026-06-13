@@ -1,9 +1,9 @@
-import type { ITopicRepository } from '@domain/interfaces/topic-repository.interface.js';
-import { Topic } from '@domain/entities/topic.js';
-import { EntityKey } from '@domain/entities/entity-key.js';
-import type { TopicConfig } from '@domain/value-objects/topic-config.js';
-import { NotFoundException } from '@domain/exceptions/not-found-exception.js';
-import { ConflictException } from '@domain/exceptions/conflict-exception.js';
+import type { ITopicRepository } from '@taktflow/domain/interfaces/topic-repository.interface.js';
+import { Topic } from '@taktflow/domain/entities/topic.js';
+import { EntityKey } from '@taktflow/domain/entities/entity-key.js';
+import type { TopicConfig } from '@taktflow/domain/value-objects/topic-config.js';
+import { NotFoundException } from '@taktflow/domain/exceptions/not-found-exception.js';
+import { ConflictException } from '@taktflow/domain/exceptions/conflict-exception.js';
 
 import type { ITopicService }      from '../interfaces/topic-service.interface.js';
 import type { CreateTopicRequest } from '../requests/topics/create-topic.request.js';

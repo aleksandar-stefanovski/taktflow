@@ -1,6 +1,6 @@
-import type { Consumer }       from '@domain/entities/consumer.js';
-import type { EventDelivery }  from '@domain/entities/event-delivery.js';
-import type { ClaimedEvent }   from '@domain/types/claimed-event.type.js';
+import type { Consumer }       from '@taktflow/domain/entities/consumer.js';
+import type { EventDelivery }  from '@taktflow/domain/entities/event-delivery.js';
+import type { ClaimedEvent }   from '@taktflow/domain/types/claimed-event.type.js';
 
 import type { CreatePushConsumerRequest } from '../requests/consumers/create-push-consumer.request.js';
 import type { CreatePullConsumerRequest } from '../requests/consumers/create-pull-consumer.request.js';

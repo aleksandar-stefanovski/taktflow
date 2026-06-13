@@ -3,10 +3,10 @@ import { and, eq, isNull } from 'drizzle-orm';
 import type { DrizzleDb } from '../../database.js';
 import { users } from '../../schema/users.js';
 import type { UserRow } from '../../schema/users.js';
-import { User } from '@domain/entities/user.js';
-import type { UserRole } from '@domain/entities/user.js';
-import { EntityKey } from '@domain/entities/entity-key.js';
-import type { ICurrentTenantProvider } from '@domain/interfaces/current-tenant-provider.interface.js';
+import { User } from '@taktflow/domain/entities/user.js';
+import type { UserRole } from '@taktflow/domain/entities/user.js';
+import { EntityKey } from '@taktflow/domain/entities/entity-key.js';
+import type { ICurrentTenantProvider } from '@taktflow/domain/interfaces/current-tenant-provider.interface.js';
 import { EntityBaseReadonlyRepository } from './entity-base-readonly-repository.js';
 
 export class UserReadonlyRepository extends EntityBaseReadonlyRepository<User> {

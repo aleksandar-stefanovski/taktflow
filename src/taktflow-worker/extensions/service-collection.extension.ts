@@ -1,26 +1,27 @@
 import type { Pool } from 'pg';
 import pino from 'pino';
 
-import type { DrizzleDb } from '@persistence/database.js';
-import { PostgresQueueEngine }             from '@persistence/queue/postgres-queue-engine.js';
-import { EventRepository }                 from '@persistence/repositories/event-repository.js';
-import { ConsumerRepository }              from '@persistence/repositories/consumer-repository.js';
-import { TopicRepository }                 from '@persistence/repositories/topic-repository.js';
-import { ScheduleRepository }              from '@persistence/repositories/schedule-repository.js';
-import { TenantMetricsRepository }         from '@persistence/repositories/tenant-metrics-repository.js';
-import { EventDeliveryRepository }         from '@persistence/repositories/event-delivery-repository.js';
-import { AsyncLocalStorageTenantProvider } from '@infrastructure/context/async-local-storage-tenant-provider.js';
+import type { DrizzleDb } from '@taktflow/persistence/database.js';
+import { PostgresQueueEngine }             from '@taktflow/persistence/queue/postgres-queue-engine.js';
+import { EventRepository }                 from '@taktflow/persistence/repositories/event-repository.js';
+import { ConsumerRepository }              from '@taktflow/persistence/repositories/consumer-repository.js';
+import { TopicRepository }                 from '@taktflow/persistence/repositories/topic-repository.js';
+import { ScheduleRepository }              from '@taktflow/persistence/repositories/schedule-repository.js';
+import { TenantMetricsRepository }         from '@taktflow/persistence/repositories/tenant-metrics-repository.js';
+import { EventDeliveryRepository }         from '@taktflow/persistence/repositories/event-delivery-repository.js';
+import { AsyncLocalStorageTenantProvider } from '@taktflow/infra/context/async-local-storage-tenant-provider.js';
 
-import { workerConfig }        from '../config/worker.config.js';
+import { workerConfig }         from '../config/worker.config.js';
 import { createLoggerMessages } from './logger-message.extension.js';
 
+import { Worker }           from '../worker.js';
 import { MetricsService }   from '../services/metrics-service.js';
 import { RetryService }     from '../services/retry-service.js';
 import { DeliveryService }  from '../services/delivery-service.js';
 import { SchedulerService } from '../services/scheduler-service.js';
 import { CleanupService }   from '../services/cleanup-service.js';
 
-export function buildWorkerServices(db: DrizzleDb) {
+export function buildWorker(db: DrizzleDb): Worker {
   const pool           = (db as unknown as { $client: Pool }).$client;
   const tenantProvider = new AsyncLocalStorageTenantProvider();
   const logger         = createLoggerMessages(pino({ level: workerConfig.LOG_LEVEL }));
@@ -40,5 +41,5 @@ export function buildWorkerServices(db: DrizzleDb) {
   const schedulerService = new SchedulerService(schedules, events, consumers, queue, logger, config);
   const cleanupService   = new CleanupService(pool, logger, config);
 
-  return { deliveryService, retryService, schedulerService, cleanupService, metricsService };
+  return new Worker(deliveryService, retryService, schedulerService, cleanupService, metricsService, logger);
 }

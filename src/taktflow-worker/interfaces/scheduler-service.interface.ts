@@ -1,4 +1,4 @@
 export interface ISchedulerService {
   start(): void;
-  stop(): void;
+  stop(): Promise<void>;
 }

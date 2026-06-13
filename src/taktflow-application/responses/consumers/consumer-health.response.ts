@@ -1,4 +1,4 @@
-import type { EventDelivery } from '@domain/entities/event-delivery.js';
+import type { EventDelivery } from '@taktflow/domain/entities/event-delivery.js';
 
 export class ConsumerHealthResponse {
   readonly consumerId: string;

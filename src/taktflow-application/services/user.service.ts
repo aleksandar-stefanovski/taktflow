@@ -1,10 +1,10 @@
-import type { IUserRepository } from '@domain/interfaces/user-repository.interface.js';
-import { User } from '@domain/entities/user.js';
-import { EntityKey } from '@domain/entities/entity-key.js';
-import type { UserRole } from '@domain/entities/user.js';
-import { NotFoundException } from '@domain/exceptions/not-found-exception.js';
-import { ConflictException } from '@domain/exceptions/conflict-exception.js';
-import { UnauthorizedException } from '@domain/exceptions/unauthorized-exception.js';
+import type { IUserRepository } from '@taktflow/domain/interfaces/user-repository.interface.js';
+import { User } from '@taktflow/domain/entities/user.js';
+import { EntityKey } from '@taktflow/domain/entities/entity-key.js';
+import type { UserRole } from '@taktflow/domain/entities/user.js';
+import { NotFoundException } from '@taktflow/domain/exceptions/not-found-exception.js';
+import { ConflictException } from '@taktflow/domain/exceptions/conflict-exception.js';
+import { UnauthorizedException } from '@taktflow/domain/exceptions/unauthorized-exception.js';
 
 import type { IPasswordService } from '../contracts/password-service.interface.js';
 import type { IUserService }     from '../interfaces/user-service.interface.js';

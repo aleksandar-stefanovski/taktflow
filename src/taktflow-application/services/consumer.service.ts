@@ -1,16 +1,17 @@
 import { randomBytes } from 'node:crypto';
 
-import type { IConsumerRepository } from '@domain/interfaces/consumer-repository.interface.js';
-import type { ITopicRepository } from '@domain/interfaces/topic-repository.interface.js';
-import type { IEventDeliveryRepository } from '@domain/interfaces/event-delivery-repository.interface.js';
-import { Consumer } from '@domain/entities/consumer.js';
-import { EntityKey } from '@domain/entities/entity-key.js';
-import { NotFoundException } from '@domain/exceptions/not-found-exception.js';
-import { ValidationException } from '@domain/exceptions/validation-exception.js';
+import type { IConsumerRepository } from '@taktflow/domain/interfaces/consumer-repository.interface.js';
+import type { ITopicRepository } from '@taktflow/domain/interfaces/topic-repository.interface.js';
+import type { IEventDeliveryRepository } from '@taktflow/domain/interfaces/event-delivery-repository.interface.js';
+import { Consumer } from '@taktflow/domain/entities/consumer.js';
+import { EntityKey } from '@taktflow/domain/entities/entity-key.js';
+import { NotFoundException } from '@taktflow/domain/exceptions/not-found-exception.js';
+import { ValidationException } from '@taktflow/domain/exceptions/validation-exception.js';
 
-import type { IEventQueueService, ClaimedEvent } from '@domain/interfaces/event-queue-service.interface.js';
+import type { IEventQueueService } from '@taktflow/domain/interfaces/event-queue-service.interface.js';
+import type { ClaimedEvent } from '@taktflow/domain/types/claimed-event.type.js';
 import type { IConsumerService }                 from '../interfaces/consumer-service.interface.js';
-import type { EventDelivery } from '@domain/entities/event-delivery.js';
+import type { EventDelivery } from '@taktflow/domain/entities/event-delivery.js';
 import type { CreatePushConsumerRequest } from '../requests/consumers/create-push-consumer.request.js';
 import type { CreatePullConsumerRequest } from '../requests/consumers/create-pull-consumer.request.js';
 import type { ListConsumersQuery } from '../requests/consumers/list-consumers.request.js';

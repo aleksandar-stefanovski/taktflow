@@ -3,11 +3,11 @@ import type { FastifyInstance } from 'fastify';
 import {
   CreateTopicSchema,
   UpdateTopicSchema,
-} from '@application/validators/topic-validators.js';
+} from '@taktflow/application/validators/topic-validators.js';
 import { PaginationSchema }     from '@api/swagger/pagination-schema.js';
-import { CreateTopicResponse }  from '@application/responses/topics/create-topic.response.js';
-import { TopicDetailResponse }  from '@application/responses/topics/topic-detail.response.js';
-import { TopicSummaryResponse } from '@application/responses/topics/topic-summary.response.js';
+import { CreateTopicResponse }  from '@taktflow/application/responses/topics/create-topic.response.js';
+import { TopicDetailResponse }  from '@taktflow/application/responses/topics/topic-detail.response.js';
+import { TopicSummaryResponse } from '@taktflow/application/responses/topics/topic-summary.response.js';
 
 import { jwtMiddleware } from '@api/middleware/jwt-middleware.js';
 import { topicSchemas }  from './topics.schemas.js';

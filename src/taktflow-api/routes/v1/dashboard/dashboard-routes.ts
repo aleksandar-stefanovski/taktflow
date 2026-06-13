@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 
-import { DashboardMetricsResponse } from '@application/responses/metrics/dashboard-metrics.response.js';
+import { DashboardMetricsResponse } from '@taktflow/application/responses/metrics/dashboard-metrics.response.js';
 
 import { jwtMiddleware }    from '@api/middleware/jwt-middleware.js';
 import { dashboardSchemas } from './dashboard.schemas.js';

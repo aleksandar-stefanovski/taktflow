@@ -1,4 +1,4 @@
 export interface ICleanupService {
   start(): void;
-  stop(): void;
+  stop(): Promise<void>;
 }

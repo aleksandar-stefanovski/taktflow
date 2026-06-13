@@ -1,4 +1,4 @@
-import type { Topic }               from '@domain/entities/topic.js';
+import type { Topic }               from '@taktflow/domain/entities/topic.js';
 import type { CreateTopicRequest }  from '../requests/topics/create-topic.request.js';
 import type { UpdateTopicRequest }  from '../requests/topics/update-topic.request.js';
 import type { PaginationQuery }     from '../requests/pagination.request.js';

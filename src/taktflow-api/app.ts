@@ -1,7 +1,7 @@
 import Fastify, { type FastifyInstance } from 'fastify';
 import compress from '@fastify/compress';
 
-import type { DrizzleDb } from '@persistence/database.js';
+import type { DrizzleDb } from '@taktflow/persistence/database.js';
 
 import { serverConfig } from '@api/config/server.config.js';
 import { securityPlugin } from '@api/plugins/security-plugin.js';

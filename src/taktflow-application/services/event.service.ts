@@ -1,17 +1,17 @@
 import { createHash, randomUUID } from 'node:crypto';
 
-import type { IEventRepository } from '@domain/interfaces/event-repository.interface.js';
-import type { ITopicRepository } from '@domain/interfaces/topic-repository.interface.js';
-import type { IConsumerRepository } from '@domain/interfaces/consumer-repository.interface.js';
-import { Event } from '@domain/entities/event.js';
-import { EntityKey } from '@domain/entities/entity-key.js';
-import { NotFoundException } from '@domain/exceptions/not-found-exception.js';
-import { PlanLimitException } from '@domain/exceptions/plan-limit-exception.js';
+import type { IEventRepository } from '@taktflow/domain/interfaces/event-repository.interface.js';
+import type { ITopicRepository } from '@taktflow/domain/interfaces/topic-repository.interface.js';
+import type { IConsumerRepository } from '@taktflow/domain/interfaces/consumer-repository.interface.js';
+import { Event } from '@taktflow/domain/entities/event.js';
+import { EntityKey } from '@taktflow/domain/entities/entity-key.js';
+import { NotFoundException } from '@taktflow/domain/exceptions/not-found-exception.js';
+import { PlanLimitException } from '@taktflow/domain/exceptions/plan-limit-exception.js';
 
-import { canonicalJson } from '@utils/canonical-json.helper.js';
+import { canonicalJson } from '@taktflow/utils/helpers/canonical-json.helper.js';
 
 import type { IUsageService } from '@application/interfaces/usage-service.interface.js';
-import type { IEventQueueService } from '@domain/interfaces/event-queue-service.interface.js';
+import type { IEventQueueService } from '@taktflow/domain/interfaces/event-queue-service.interface.js';
 import type { IEventService }      from '../interfaces/event-service.interface.js';
 import type { ProduceEventRequest } from '../requests/events/produce-event.request.js';
 import type { ListEventsQuery } from '../requests/events/list-events.request.js';
@@ -29,12 +29,15 @@ export class EventService implements IEventService {
   async produce(request: ProduceEventRequest & { tenantId: string }): Promise<Event> {
     await this.usage.assertWithinLimit(request.tenantId, 1);
 
-    const topic = await this.topics.findById(request.topicId);
+    const [topic, payloadLimit] = await Promise.all([
+      this.topics.findById(request.topicId),
+      this.usage.getPayloadLimit(request.tenantId),
+    ]);
     if (!topic) throw new NotFoundException('Topic', request.topicId);
 
     const payloadBytes = Buffer.byteLength(JSON.stringify(request.payload));
-    if (payloadBytes > topic.config.maxPayloadBytes) {
-      throw new PlanLimitException('Payload size', topic.config.maxPayloadBytes);
+    if (payloadBytes > payloadLimit) {
+      throw new PlanLimitException('Payload size', payloadLimit);
     }
 
     if (request.idempotencyKey) {

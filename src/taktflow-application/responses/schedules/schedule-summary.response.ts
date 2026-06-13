@@ -1,4 +1,4 @@
-import type { Schedule, ScheduleStatus } from '@domain/entities/schedule.js';
+import type { Schedule, ScheduleStatus } from '@taktflow/domain/entities/schedule.js';
 
 export class ScheduleSummaryResponse {
   readonly id:          string;

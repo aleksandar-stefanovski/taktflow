@@ -7,9 +7,8 @@ export const CreateTopicSchema = z.object({
     .max(255, 'Topic name cannot exceed 255 characters')
     .regex(/^[a-z0-9._-]+$/, 'Only lowercase letters, numbers, dots, hyphens, and underscores'),
   config: z.object({
-    retentionDays:   z.number().int().positive().optional(),
-    maxPayloadBytes: z.number().int().positive().optional(),
-    ordering:        z.enum(['fifo', 'unordered']).optional(),
+    retentionDays: z.number().int().positive().optional(),
+    ordering:      z.enum(['fifo', 'unordered']).optional(),
   }).optional(),
 });
 
@@ -21,8 +20,7 @@ export const UpdateTopicSchema = z.object({
     .regex(/^[a-z0-9._-]+$/, 'Only lowercase letters, numbers, dots, hyphens, and underscores')
     .optional(),
   config: z.object({
-    retentionDays:   z.number().int().positive().optional(),
-    maxPayloadBytes: z.number().int().positive().optional(),
-    ordering:        z.enum(['fifo', 'unordered']).optional(),
+    retentionDays: z.number().int().positive().optional(),
+    ordering:      z.enum(['fifo', 'unordered']).optional(),
   }).optional(),
 });

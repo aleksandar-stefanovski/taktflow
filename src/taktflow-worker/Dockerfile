@@ -43,11 +43,10 @@ WORKDIR /app
 ENV NODE_ENV=production
 
 COPY --from=builder /app/src      ./src
-COPY --from=builder /app/packages ./packages
 COPY --from=builder /app/package.json        ./
 COPY --from=builder /app/pnpm-workspace.yaml ./
 COPY --from=builder /app/pnpm-lock.yaml      ./
 
 RUN pnpm install --frozen-lockfile --prod
 
-CMD ["node", "src/taktflow-worker/dist/worker.js"]
+CMD ["node", "src/taktflow-worker/dist/index.js"]

@@ -4,8 +4,8 @@ import {
   CreateUserSchema,
   UpdateUserSchema,
   ChangePasswordSchema,
-} from '@application/validators/user-validators.js';
-import { UserResponse } from '@application/responses/users/user.response.js';
+} from '@taktflow/application/validators/user-validators.js';
+import { UserResponse } from '@taktflow/application/responses/users/user.response.js';
 
 import { jwtMiddleware } from '@api/middleware/jwt-middleware.js';
 import { userSchemas }   from './users.schemas.js';

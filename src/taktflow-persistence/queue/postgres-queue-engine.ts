@@ -2,12 +2,12 @@ import { randomUUID } from 'node:crypto';
 
 import { eq, sql } from 'drizzle-orm';
 
-import type { ClaimedEvent }  from '@domain/types/claimed-event.type.js';
+import type { ClaimedEvent }  from '@taktflow/domain/types/claimed-event.type.js';
 import type { DrizzleDb }     from '@persistence/database.js';
 import { eventDeliveries }    from '@persistence/schema/event-deliveries.js';
 import { deadLetterEvents }   from '@persistence/schema/dead-letter-events.js';
 import { events }             from '@persistence/schema/events.js';
-import type { IEventQueueService }  from '@domain/interfaces/event-queue-service.interface.js';
+import type { IEventQueueService }  from '@taktflow/domain/interfaces/event-queue-service.interface.js';
 
 type DrizzleTx = Parameters<Parameters<DrizzleDb['transaction']>[0]>[0];
 

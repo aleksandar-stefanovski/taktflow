@@ -1,4 +1,4 @@
-import type { Event, EventStatus, EventSource } from '@domain/entities/event.js';
+import type { Event, EventStatus, EventSource } from '@taktflow/domain/entities/event.js';
 
 export class GetEventDetailResponse {
   readonly id:             string;

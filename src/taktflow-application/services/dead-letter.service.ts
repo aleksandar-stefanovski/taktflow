@@ -1,15 +1,15 @@
 import { randomUUID } from 'node:crypto';
 
-import type { IDeadLetterEventRepository } from '@domain/interfaces/dead-letter-event-repository.interface.js';
-import type { IConsumerRepository } from '@domain/interfaces/consumer-repository.interface.js';
-import { NotFoundException } from '@domain/exceptions/not-found-exception.js';
-import { ConflictException } from '@domain/exceptions/conflict-exception.js';
+import type { IDeadLetterEventRepository } from '@taktflow/domain/interfaces/dead-letter-event-repository.interface.js';
+import type { IConsumerRepository } from '@taktflow/domain/interfaces/consumer-repository.interface.js';
+import { NotFoundException } from '@taktflow/domain/exceptions/not-found-exception.js';
+import { ConflictException } from '@taktflow/domain/exceptions/conflict-exception.js';
 
-import type { IEventQueueService }  from '@domain/interfaces/event-queue-service.interface.js';
+import type { IEventQueueService }  from '@taktflow/domain/interfaces/event-queue-service.interface.js';
 import type { IDeadLetterService }  from '../interfaces/dead-letter-service.interface.js';
 import type { ListDeadLetterEventsQuery } from '../requests/dead-letter/list-dead-letter-events.request.js';
 import { PaginatedResponse } from '../responses/paginated-response.js';
-import type { DeadLetterEvent } from '@domain/entities/dead-letter-event.js';
+import type { DeadLetterEvent } from '@taktflow/domain/entities/dead-letter-event.js';
 
 export class DeadLetterService implements IDeadLetterService {
   constructor(

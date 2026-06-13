@@ -14,13 +14,6 @@
     "declarationMap": true,
     "sourceMap": true,
     "composite": true,
-    "incremental": true,
-    "paths": {
-      "@domain/*":         ["./src/taktflow-domain/*"],
-      "@persistence/*":    ["./src/taktflow-persistence/*"],
-      "@infrastructure/*": ["./src/taktflow-infrastructure/*"],
-      "@application/*":    ["./src/taktflow-application/*"],
-      "@utils/*":          ["./src/taktflow-utils/*"]
-    }
+    "incremental": true
   }
 }

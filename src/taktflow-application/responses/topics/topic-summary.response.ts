@@ -1,5 +1,5 @@
-import type { Topic } from '@domain/entities/topic.js';
-import type { TopicConfig } from '@domain/value-objects/topic-config.js';
+import type { Topic } from '@taktflow/domain/entities/topic.js';
+import type { TopicConfig } from '@taktflow/domain/value-objects/topic-config.js';
 
 export class TopicSummaryResponse {
   readonly id:        string;

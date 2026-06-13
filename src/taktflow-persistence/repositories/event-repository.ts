@@ -4,9 +4,9 @@ import { firstCount } from '../query.helper.js';
 import type { DrizzleDb } from '../database.js';
 import { events } from '../schema/events.js';
 import type { EventRow } from '../schema/events.js';
-import { Event } from '@domain/entities/event.js';
-import type { IEventRepository } from '@domain/interfaces/event-repository.interface.js';
-import type { ICurrentTenantProvider } from '@domain/interfaces/current-tenant-provider.interface.js';
+import { Event } from '@taktflow/domain/entities/event.js';
+import type { IEventRepository } from '@taktflow/domain/interfaces/event-repository.interface.js';
+import type { ICurrentTenantProvider } from '@taktflow/domain/interfaces/current-tenant-provider.interface.js';
 import { EventReadonlyRepository } from './readonly/event-readonly-repository.js';
 import { EntityBaseRepository } from './entity-base-repository.js';
 

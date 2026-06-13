@@ -1,26 +1,41 @@
-import { config } from 'dotenv';
-config({ path: '.env.local' });
+import type { IDeliveryService }  from './interfaces/delivery-service.interface.js';
+import type { IRetryService }     from './interfaces/retry-service.interface.js';
+import type { ISchedulerService } from './interfaces/scheduler-service.interface.js';
+import type { ICleanupService }   from './interfaces/cleanup-service.interface.js';
+import type { IMetricsService }   from './interfaces/metrics-service.interface.js';
+import type { LoggerMessages }    from './extensions/logger-message.extension.js';
 
-const { connectDatabase } = await import('@persistence/database.js');
-const { databaseConfig }  = await import('./config/database.config.js');
-const { WorkerFactory }   = await import('./worker-factory.js');
+export class Worker {
+  constructor(
+    private readonly delivery:  IDeliveryService,
+    private readonly retry:     IRetryService,
+    private readonly scheduler: ISchedulerService,
+    private readonly cleanup:   ICleanupService,
+    private readonly metrics:   IMetricsService,
+    private readonly logger:    LoggerMessages,
+  ) {}
 
-async function bootstrap(): Promise<void> {
-  const db     = await connectDatabase(databaseConfig);
-  const worker = new WorkerFactory(db).create();
+  start(): void {
+    this.metrics.start();
+    this.delivery.start();
+    this.retry.start();
+    this.scheduler.start();
+    this.cleanup.start();
+    this.logger.logWorkerStarted();
+  }
 
-  worker.start();
+  async stop(): Promise<void> {
+    this.logger.logWorkerStopping();
 
-  const shutdown = async (): Promise<void> => {
-    await worker.stop();
-    process.exit(0);
-  };
+    await Promise.all([
+      this.delivery.stop(),
+      this.scheduler.stop(),
+      this.retry.stop(),
+      this.cleanup.stop(),
+    ]);
 
-  process.once('SIGTERM', shutdown);
-  process.once('SIGINT',  shutdown);
+    await this.metrics.stop();
+
+    this.logger.logWorkerStopped();
+  }
 }
-
-bootstrap().catch((error: unknown) => {
-  console.error('Failed to start worker', error);
-  process.exit(1);
-});

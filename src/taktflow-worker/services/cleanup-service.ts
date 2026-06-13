@@ -1,31 +1,31 @@
 import type { Pool } from 'pg';
-import type { LoggerMessages } from '../extensions/logger-message.extension.js';
-import type { WorkerConfig }   from '../config/worker.config.js';
+import type { LoggerMessages }  from '../extensions/logger-message.extension.js';
+import type { WorkerConfig }    from '../config/worker.config.js';
 import type { ICleanupService } from '../interfaces/cleanup-service.interface.js';
 import { formatPartitionName, formatDate } from '../helpers/partition.helper.js';
+import { RecurringTask }        from '../helpers/recurring-task.helper.js';
 
 export class CleanupService implements ICleanupService {
-  private intervalHandle: NodeJS.Timeout | null = null;
+  private readonly task: RecurringTask;
 
   constructor(
     private readonly pool:   Pool,
     private readonly logger: LoggerMessages,
     private readonly config: WorkerConfig,
-  ) {}
-
-  start(): void {
-    this.intervalHandle = setInterval(() => {
-      void this.tick().catch((error: unknown) => {
-        this.logger.logWorkerLoopError('cleanup', error as Error);
-      });
-    }, this.config.WORKER_CLEANUP_INTERVAL_MS);
+  ) {
+    this.task = new RecurringTask(
+      this.config.WORKER_CLEANUP_INTERVAL_MS,
+      () => this.tick(),
+      error => this.logger.logWorkerLoopError('cleanup', error),
+    );
   }
 
-  stop(): void {
-    if (this.intervalHandle) {
-      clearInterval(this.intervalHandle);
-      this.intervalHandle = null;
-    }
+  start(): void {
+    this.task.start();
+  }
+
+  stop(): Promise<void> {
+    return this.task.stop();
   }
 
   private async tick(): Promise<void> {

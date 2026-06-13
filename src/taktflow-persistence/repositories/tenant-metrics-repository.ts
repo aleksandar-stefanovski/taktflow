@@ -3,8 +3,8 @@ import { eq, sql } from 'drizzle-orm';
 import type { DrizzleDb } from '../database.js';
 import { projectMetrics } from '../schema/project-metrics.js';
 import type { ProjectMetricsRow } from '../schema/project-metrics.js';
-import { TenantMetrics } from '@domain/entities/tenant-metrics.js';
-import type { ITenantMetricsRepository } from '@domain/interfaces/tenant-metrics-repository.interface.js';
+import { TenantMetrics } from '@taktflow/domain/entities/tenant-metrics.js';
+import type { ITenantMetricsRepository } from '@taktflow/domain/interfaces/tenant-metrics-repository.interface.js';
 
 export class TenantMetricsRepository implements ITenantMetricsRepository {
   constructor(private readonly db: DrizzleDb) {}

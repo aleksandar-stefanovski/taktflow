@@ -3,9 +3,9 @@ import { and, eq, sql, type SQL } from 'drizzle-orm';
 import type { DrizzleDb } from '../database.js';
 import { eventDeliveries } from '../schema/event-deliveries.js';
 import type { EventDeliveryRow } from '../schema/event-deliveries.js';
-import { EventDelivery } from '@domain/entities/event-delivery.js';
-import type { IEventDeliveryRepository } from '@domain/interfaces/event-delivery-repository.interface.js';
-import type { ICurrentTenantProvider } from '@domain/interfaces/current-tenant-provider.interface.js';
+import { EventDelivery } from '@taktflow/domain/entities/event-delivery.js';
+import type { IEventDeliveryRepository } from '@taktflow/domain/interfaces/event-delivery-repository.interface.js';
+import type { ICurrentTenantProvider } from '@taktflow/domain/interfaces/current-tenant-provider.interface.js';
 import { EventDeliveryReadonlyRepository } from './readonly/event-delivery-readonly-repository.js';
 import { EntityBaseRepository } from './entity-base-repository.js';
 

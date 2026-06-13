@@ -4,8 +4,8 @@ import type { SQL } from 'drizzle-orm';
 import type { PgTableWithColumns, TableConfig } from 'drizzle-orm/pg-core';
 
 import type { DrizzleDb } from '../../database.js';
-import type { EntityBase } from '@domain/entities/entity-base.js';
-import type { ICurrentTenantProvider } from '@domain/interfaces/current-tenant-provider.interface.js';
+import type { EntityBase } from '@taktflow/domain/entities/entity-base.js';
+import type { ICurrentTenantProvider } from '@taktflow/domain/interfaces/current-tenant-provider.interface.js';
 
 export abstract class EntityBaseReadonlyRepository<T extends EntityBase> {
   private readonly _table: PgTableWithColumns<TableConfig>;

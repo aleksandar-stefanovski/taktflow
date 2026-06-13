@@ -3,18 +3,18 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "main": "./dist/worker.js",
-  "types": "./dist/worker.d.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "scripts": {
     "build": "tsc && tsc-alias",
-    "dev": "tsx watch worker.ts",
-    "start": "tsx worker.ts"
+    "dev": "tsx watch index.ts",
+    "start": "tsx index.ts"
   },
   "dependencies": {
-    "@taktflow/abstractions": "workspace:*",
     "@taktflow/domain": "workspace:*",
     "@taktflow/infra": "workspace:*",
     "@taktflow/persistence": "workspace:*",
+    "@taktflow/utils": "workspace:*",
     "@types/pg": "^8.20.0",
     "cron-parser": "^4.9.0",
     "dotenv": "^16.4.0",

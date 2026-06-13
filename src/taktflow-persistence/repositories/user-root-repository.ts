@@ -2,8 +2,8 @@ import { and, eq, isNull } from 'drizzle-orm';
 
 import type { DrizzleDb } from '../database.js';
 import { users } from '../schema/users.js';
-import { User } from '@domain/entities/user.js';
-import type { IUserRootRepository } from '@domain/interfaces/user-root-repository.interface.js';
+import { User } from '@taktflow/domain/entities/user.js';
+import type { IUserRootRepository } from '@taktflow/domain/interfaces/user-root-repository.interface.js';
 import { UserReadonlyRepository } from './readonly/user-readonly-repository.js';
 
 export class UserRootRepository implements IUserRootRepository {

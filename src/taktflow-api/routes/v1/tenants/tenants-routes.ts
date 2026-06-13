@@ -1,8 +1,8 @@
 import type { FastifyInstance } from 'fastify';
 
-import { UpdateTenantSchema, ReactivateTenantSchema } from '@application/validators/tenant-validators.js';
-import { TenantResponse }                             from '@application/responses/tenants/tenant.response.js';
-import { UsageResponse }                              from '@application/responses/tenants/usage.response.js';
+import { UpdateTenantSchema, ReactivateTenantSchema } from '@taktflow/application/validators/tenant-validators.js';
+import { TenantResponse }                             from '@taktflow/application/responses/tenants/tenant.response.js';
+import { UsageResponse }                              from '@taktflow/application/responses/tenants/usage.response.js';
 
 import { jwtMiddleware } from '@api/middleware/jwt-middleware.js';
 import { tenantSchemas } from './tenants.schemas.js';

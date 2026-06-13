@@ -1,26 +1,25 @@
 import { createHash, createHmac } from 'node:crypto';
-import { canonicalJson } from '@utils/helpers/canonical-json.helper.js';
-import { DELIVERY_HEADERS } from '@infrastructure/constants/delivery-headers.constants.js';
-import { tenantContextStore } from '@infrastructure/context/tenant-context-store.js';
-import type { ClaimedEvent } from '@domain/types/claimed-event.type.js';
+import { canonicalJson } from '@taktflow/utils/helpers/canonical-json.helper.js';
+import { DELIVERY_HEADERS } from '@taktflow/infra/constants/delivery-headers.constants.js';
+import { tenantContextStore } from '@taktflow/infra/context/tenant-context-store.js';
+import type { ClaimedEvent } from '@taktflow/domain/types/claimed-event.type.js';
 
-import type { IEventQueueService }  from '@domain/interfaces/event-queue-service.interface.js';
-import type { IEventRepository }    from '@domain/interfaces/event-repository.interface.js';
-import type { IConsumerRepository } from '@domain/interfaces/consumer-repository.interface.js';
-import type { ITopicRepository }    from '@domain/interfaces/topic-repository.interface.js';
+import type { IEventQueueService }  from '@taktflow/domain/interfaces/event-queue-service.interface.js';
+import type { IEventRepository }    from '@taktflow/domain/interfaces/event-repository.interface.js';
+import type { IConsumerRepository } from '@taktflow/domain/interfaces/consumer-repository.interface.js';
+import type { ITopicRepository }    from '@taktflow/domain/interfaces/topic-repository.interface.js';
 import type { LoggerMessages }      from '../extensions/logger-message.extension.js';
 import type { WorkerConfig }        from '../config/worker.config.js';
-import type { Event }               from '@domain/entities/event.js';
-import type { Consumer }            from '@domain/entities/consumer.js';
-import type { Topic }               from '@domain/entities/topic.js';
+import type { Event }               from '@taktflow/domain/entities/event.js';
+import type { Consumer }            from '@taktflow/domain/entities/consumer.js';
+import type { Topic }               from '@taktflow/domain/entities/topic.js';
 import type { IRetryService }       from '../interfaces/retry-service.interface.js';
 import type { IMetricsService }     from '../interfaces/metrics-service.interface.js';
 import type { IDeliveryService }    from '../interfaces/delivery-service.interface.js';
-import { sleep }                    from '../helpers/sleep.helper.js';
+import { RecurringTask }            from '../helpers/recurring-task.helper.js';
 
 export class DeliveryService implements IDeliveryService {
-  private activeDeliveries  = 0;
-  private intervalHandle: NodeJS.Timeout | null = null;
+  private readonly task: RecurringTask;
 
   constructor(
     private readonly queue:     IEventQueueService,
@@ -31,29 +30,20 @@ export class DeliveryService implements IDeliveryService {
     private readonly config:    WorkerConfig,
     private readonly retry:     IRetryService,
     private readonly metrics:   IMetricsService,
-  ) {}
+  ) {
+    this.task = new RecurringTask(
+      this.config.WORKER_POLL_INTERVAL_MS,
+      () => this.claimAndDeliver(),
+      error => this.logger.logWorkerLoopError('delivery', error),
+    );
+  }
 
   start(): void {
-    this.intervalHandle = setInterval(() => {
-      void this.claimAndDeliver().catch((error: unknown) => {
-        this.logger.logWorkerLoopError('delivery', error as Error);
-      });
-    }, this.config.WORKER_POLL_INTERVAL_MS);
+    this.task.start();
   }
 
-  stop(): void {
-    if (this.intervalHandle) {
-      clearInterval(this.intervalHandle);
-      this.intervalHandle = null;
-    }
-  }
-
-  async waitForDrain(): Promise<void> {
-    let elapsed = 0;
-    while (this.activeDeliveries > 0 && elapsed < this.config.WORKER_SHUTDOWN_MAX_WAIT_MS) {
-      await sleep(this.config.WORKER_SHUTDOWN_POLL_INTERVAL_MS);
-      elapsed += this.config.WORKER_SHUTDOWN_POLL_INTERVAL_MS;
-    }
+  stop(): Promise<void> {
+    return this.task.stop();
   }
 
   private async claimAndDeliver(): Promise<void> {
@@ -68,15 +58,13 @@ export class DeliveryService implements IDeliveryService {
   }
 
   private async deliver(delivery: ClaimedEvent): Promise<void> {
-    this.activeDeliveries++;
     const startTime = Date.now();
-    let consumer: Consumer | null = null;
 
     try {
       const event = await this.events.findById(delivery.eventId);
       if (!event) return;
 
-      consumer = await this.consumers.findById(delivery.consumerId);
+      const consumer = await this.consumers.findById(delivery.consumerId);
       if (!consumer) {
         await this.queue.moveToDeadLetter(delivery.id, 'consumer_deleted');
         return;
@@ -92,8 +80,6 @@ export class DeliveryService implements IDeliveryService {
         return;
       }
 
-      const topic = await this.topics.findById(consumer.topicId);
-
       if (!this.checksumMatches(event)) {
         await this.queue.moveToDeadLetter(delivery.id, 'payload_integrity_check_failed');
         this.logger.logEventMovedToDeadLetter(
@@ -104,6 +90,9 @@ export class DeliveryService implements IDeliveryService {
         return;
       }
 
+      const topic = await this.topics.findById(consumer.topicId);
+      const body  = JSON.stringify(event.payload);
+
       const controller = new AbortController();
       const timeoutId = setTimeout(
         () => controller.abort(),
@@ -113,8 +102,8 @@ export class DeliveryService implements IDeliveryService {
       try {
         const response = await fetch(consumer.url, {
           method:  'POST',
-          headers: this.buildDeliveryHeaders(delivery, event, consumer, topic),
-          body:    JSON.stringify(event.payload),
+          headers: this.buildDeliveryHeaders(delivery, event, consumer, topic, body),
+          body,
           signal:  controller.signal,
         });
 
@@ -132,8 +121,6 @@ export class DeliveryService implements IDeliveryService {
         delivery.attempt,
       );
       await this.retry.scheduleRetryOrDeadLetter(delivery, reason);
-    } finally {
-      this.activeDeliveries--;
     }
   }
 
@@ -167,7 +154,12 @@ export class DeliveryService implements IDeliveryService {
       return;
     }
 
-    await this.retry.scheduleRetryOrDeadLetter(delivery, `HTTP ${response.status}: ${responseBody}`, response.status, responseBody);
+    await this.retry.scheduleRetryOrDeadLetter(
+      delivery,
+      `HTTP ${response.status}: ${responseBody}`,
+      response.status,
+      responseBody,
+    );
   }
 
   private buildDeliveryHeaders(
@@ -175,9 +167,9 @@ export class DeliveryService implements IDeliveryService {
     event: Event,
     consumer: Consumer,
     topic: Topic | null,
+    body: string,
   ): Record<string, string> {
     const timestamp = Date.now().toString();
-    const body = JSON.stringify(event.payload);
     const signature = createHmac('sha256', consumer.secret)
       .update(`${timestamp}.${body}`)
       .digest('hex');

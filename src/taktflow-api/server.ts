@@ -1,7 +1,7 @@
 import { config } from 'dotenv';
 config({ path: '.env' });
 
-const { connectDatabase, runMigrations } = await import('@persistence/database.js');
+const { connectDatabase, runMigrations, disconnect } = await import('@taktflow/persistence/database.js');
 const { databaseConfig } = await import('./config/database.config.js');
 const { serverConfig }   = await import('./config/server.config.js');
 const { buildApp }       = await import('./app.js');
@@ -15,6 +15,7 @@ async function bootstrap(): Promise<void> {
 
   const shutdown = async (): Promise<void> => {
     await app.close();
+    await disconnect(db);
     process.exit(0);
   };
 

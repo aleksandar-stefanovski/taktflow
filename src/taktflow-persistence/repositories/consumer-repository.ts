@@ -4,9 +4,9 @@ import { firstCount } from '../query.helper.js';
 import type { DrizzleDb } from '../database.js';
 import { consumers } from '../schema/consumers.js';
 import type { ConsumerRow } from '../schema/consumers.js';
-import { Consumer } from '@domain/entities/consumer.js';
-import type { IConsumerRepository } from '@domain/interfaces/consumer-repository.interface.js';
-import type { ICurrentTenantProvider } from '@domain/interfaces/current-tenant-provider.interface.js';
+import { Consumer } from '@taktflow/domain/entities/consumer.js';
+import type { IConsumerRepository } from '@taktflow/domain/interfaces/consumer-repository.interface.js';
+import type { ICurrentTenantProvider } from '@taktflow/domain/interfaces/current-tenant-provider.interface.js';
 import { ConsumerReadonlyRepository } from './readonly/consumer-readonly-repository.js';
 import { EntityBaseRepository } from './entity-base-repository.js';
 

@@ -1,9 +1,9 @@
 import type { FastifyInstance } from 'fastify';
 
-import { CreateApiKeySchema } from '@application/validators/api-key-validators.js';
+import { CreateApiKeySchema } from '@taktflow/application/validators/api-key-validators.js';
 import { PaginationSchema }   from '@api/swagger/pagination-schema.js';
-import { CreateApiKeyResponse } from '@application/responses/api-keys/create-api-key.response.js';
-import { ApiKeyResponse }       from '@application/responses/api-keys/api-key.response.js';
+import { CreateApiKeyResponse } from '@taktflow/application/responses/api-keys/create-api-key.response.js';
+import { ApiKeyResponse }       from '@taktflow/application/responses/api-keys/api-key.response.js';
 
 import { jwtMiddleware }  from '@api/middleware/jwt-middleware.js';
 import { apiKeySchemas }  from './api-keys.schemas.js';

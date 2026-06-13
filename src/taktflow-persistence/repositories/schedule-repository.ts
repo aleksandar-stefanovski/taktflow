@@ -3,9 +3,9 @@ import { and, asc, eq, isNull, lte } from 'drizzle-orm';
 import type { DrizzleDb } from '../database.js';
 import { schedules } from '../schema/schedules.js';
 import type { ScheduleRow } from '../schema/schedules.js';
-import { Schedule } from '@domain/entities/schedule.js';
-import type { IScheduleRepository } from '@domain/interfaces/schedule-repository.interface.js';
-import type { ICurrentTenantProvider } from '@domain/interfaces/current-tenant-provider.interface.js';
+import { Schedule } from '@taktflow/domain/entities/schedule.js';
+import type { IScheduleRepository } from '@taktflow/domain/interfaces/schedule-repository.interface.js';
+import type { ICurrentTenantProvider } from '@taktflow/domain/interfaces/current-tenant-provider.interface.js';
 import { ScheduleReadonlyRepository } from './readonly/schedule-readonly-repository.js';
 import { EntityBaseRepository } from './entity-base-repository.js';
 

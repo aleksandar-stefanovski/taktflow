@@ -4,9 +4,7 @@
     "rootDir": ".",
     "outDir": "dist",
     "paths": {
-      "@domain/*":         ["../taktflow-domain/*"],
-      "@application/*":    ["./*"],
-      "@utils/*":          ["../taktflow-utils/*"]
+      "@application/*": ["./*"]
     }
   },
   "references": [

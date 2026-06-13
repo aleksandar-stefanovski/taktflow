@@ -1,9 +1,9 @@
 import type { FastifyInstance } from 'fastify';
 
-import { CreateScheduleSchema }     from '@application/validators/schedule-validators.js';
+import { CreateScheduleSchema }     from '@taktflow/application/validators/schedule-validators.js';
 import { PaginationSchema }         from '@api/swagger/pagination-schema.js';
-import { CreateScheduleResponse }   from '@application/responses/schedules/create-schedule.response.js';
-import { ScheduleSummaryResponse }  from '@application/responses/schedules/schedule-summary.response.js';
+import { CreateScheduleResponse }   from '@taktflow/application/responses/schedules/create-schedule.response.js';
+import { ScheduleSummaryResponse }  from '@taktflow/application/responses/schedules/schedule-summary.response.js';
 
 import { jwtMiddleware }   from '@api/middleware/jwt-middleware.js';
 import { scheduleSchemas } from './schedules.schemas.js';

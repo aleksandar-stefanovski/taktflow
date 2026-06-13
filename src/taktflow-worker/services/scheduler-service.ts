@@ -1,43 +1,43 @@
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import CronParser from 'cron-parser';
-import { tenantContextStore } from '@infrastructure/context/tenant-context-store.js';
+import { tenantContextStore } from '@taktflow/infra/context/tenant-context-store.js';
 
-import type { IScheduleRepository } from '@domain/interfaces/schedule-repository.interface.js';
-import type { IEventRepository }    from '@domain/interfaces/event-repository.interface.js';
-import type { IConsumerRepository } from '@domain/interfaces/consumer-repository.interface.js';
-import type { IEventQueueService }  from '@domain/interfaces/event-queue-service.interface.js';
+import type { IScheduleRepository } from '@taktflow/domain/interfaces/schedule-repository.interface.js';
+import type { IEventRepository }    from '@taktflow/domain/interfaces/event-repository.interface.js';
+import type { IConsumerRepository } from '@taktflow/domain/interfaces/consumer-repository.interface.js';
+import type { IEventQueueService }  from '@taktflow/domain/interfaces/event-queue-service.interface.js';
 import type { LoggerMessages }      from '../extensions/logger-message.extension.js';
 import type { WorkerConfig }        from '../config/worker.config.js';
 import type { ISchedulerService }   from '../interfaces/scheduler-service.interface.js';
-import type { Schedule }            from '@domain/entities/schedule.js';
-import { Event }                    from '@domain/entities/event.js';
-import { EntityKey }                from '@domain/entities/entity-key.js';
+import type { Schedule }            from '@taktflow/domain/entities/schedule.js';
+import { Event }                    from '@taktflow/domain/entities/event.js';
+import { EntityKey }                from '@taktflow/domain/entities/entity-key.js';
+import { RecurringTask }            from '../helpers/recurring-task.helper.js';
 
 export class SchedulerService implements ISchedulerService {
-  private intervalHandle: NodeJS.Timeout | null = null;
+  private readonly task: RecurringTask;
 
   constructor(
-    private readonly schedules:  IScheduleRepository,
-    private readonly events:     IEventRepository,
-    private readonly consumers:  IConsumerRepository,
-    private readonly queue:      IEventQueueService,
-    private readonly logger:     LoggerMessages,
-    private readonly config:     WorkerConfig,
-  ) {}
-
-  start(): void {
-    this.intervalHandle = setInterval(() => {
-      void this.processDueSchedules(new Date()).catch((error: unknown) => {
-        this.logger.logWorkerLoopError('scheduler', error as Error);
-      });
-    }, this.config.WORKER_SCHEDULER_INTERVAL_MS);
+    private readonly schedules: IScheduleRepository,
+    private readonly events:    IEventRepository,
+    private readonly consumers: IConsumerRepository,
+    private readonly queue:     IEventQueueService,
+    private readonly logger:    LoggerMessages,
+    private readonly config:    WorkerConfig,
+  ) {
+    this.task = new RecurringTask(
+      this.config.WORKER_SCHEDULER_INTERVAL_MS,
+      () => this.processDueSchedules(new Date()),
+      error => this.logger.logWorkerLoopError('scheduler', error),
+    );
   }
 
-  stop(): void {
-    if (this.intervalHandle) {
-      clearInterval(this.intervalHandle);
-      this.intervalHandle = null;
-    }
+  start(): void {
+    this.task.start();
+  }
+
+  stop(): Promise<void> {
+    return this.task.stop();
   }
 
   private async processDueSchedules(now: Date): Promise<void> {
@@ -55,11 +55,11 @@ export class SchedulerService implements ISchedulerService {
           .digest('hex');
 
         const event = new Event({
-          key:      EntityKey.create(schedule.key.tenantId),
-          topicId:  schedule.topicId,
-          payload:  schedule.payload,
+          key:     EntityKey.create(schedule.key.tenantId),
+          topicId: schedule.topicId,
+          payload: schedule.payload,
           checksum,
-          source:   'api',
+          source:  'api',
         });
 
         await this.events.create(event);
@@ -73,14 +73,14 @@ export class SchedulerService implements ISchedulerService {
         await Promise.all(
           consumers.map(consumer =>
             this.queue.enqueue({
-              id:          crypto.randomUUID(),
+              id:          randomUUID(),
               eventId:     event.id,
               tenantId:    schedule.key.tenantId!,
               topicId:     schedule.topicId,
               consumerId:  consumer.id,
               payload:     schedule.payload,
               attempt:     0,
-              scheduledAt: new Date(),
+              scheduledAt: firedAt,
             }),
           ),
         );

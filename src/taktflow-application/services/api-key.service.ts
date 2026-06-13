@@ -1,9 +1,9 @@
 import { createHash, randomBytes } from 'node:crypto';
 
-import type { IApiKeyRepository } from '@domain/interfaces/api-key-repository.interface.js';
-import { ApiKey } from '@domain/entities/api-key.js';
-import { EntityKey } from '@domain/entities/entity-key.js';
-import { NotFoundException } from '@domain/exceptions/not-found-exception.js';
+import type { IApiKeyRepository } from '@taktflow/domain/interfaces/api-key-repository.interface.js';
+import { ApiKey } from '@taktflow/domain/entities/api-key.js';
+import { EntityKey } from '@taktflow/domain/entities/entity-key.js';
+import { NotFoundException } from '@taktflow/domain/exceptions/not-found-exception.js';
 
 import type { IApiKeyService }      from '../interfaces/api-key-service.interface.js';
 import type { CreateApiKeyRequest } from '../requests/api-keys/create-api-key.request.js';

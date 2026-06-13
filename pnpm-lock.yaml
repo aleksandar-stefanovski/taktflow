@@ -24,19 +24,6 @@ importers:
         specifier: ^2.0.0
         version: 2.1.9(@types/node@22.19.19)
 
-  src/taktflow-abstractions:
-    dependencies:
-      '@taktflow/domain':
-        specifier: workspace:*
-        version: link:../taktflow-domain
-    devDependencies:
-      '@types/node':
-        specifier: ^22.0.0
-        version: 22.19.19
-      typescript:
-        specifier: ^5.7.0
-        version: 5.9.3
-
   src/taktflow-api:
     dependencies:
       '@fastify/compress':
@@ -57,9 +44,6 @@ importers:
       '@fastify/swagger-ui':
         specifier: ^5.0.0
         version: 5.2.6
-      '@taktflow/abstractions':
-        specifier: workspace:*
-        version: link:../taktflow-abstractions
       '@taktflow/application':
         specifier: workspace:*
         version: link:../taktflow-application
@@ -109,12 +93,12 @@ importers:
 
   src/taktflow-application:
     dependencies:
-      '@taktflow/abstractions':
-        specifier: workspace:*
-        version: link:../taktflow-abstractions
       '@taktflow/domain':
         specifier: workspace:*
         version: link:../taktflow-domain
+      '@taktflow/utils':
+        specifier: workspace:*
+        version: link:../taktflow-utils
       zod:
         specifier: ^3.24.0
         version: 3.25.76
@@ -162,9 +146,6 @@ importers:
 
   src/taktflow-persistence:
     dependencies:
-      '@taktflow/abstractions':
-        specifier: workspace:*
-        version: link:../taktflow-abstractions
       '@taktflow/domain':
         specifier: workspace:*
         version: link:../taktflow-domain
@@ -191,11 +172,14 @@ importers:
         specifier: ^5.7.0
         version: 5.9.3
 
+  src/taktflow-utils:
+    devDependencies:
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+
   src/taktflow-worker:
     dependencies:
-      '@taktflow/abstractions':
-        specifier: workspace:*
-        version: link:../taktflow-abstractions
       '@taktflow/domain':
         specifier: workspace:*
         version: link:../taktflow-domain
@@ -205,6 +189,9 @@ importers:
       '@taktflow/persistence':
         specifier: workspace:*
         version: link:../taktflow-persistence
+      '@taktflow/utils':
+        specifier: workspace:*
+        version: link:../taktflow-utils
       '@types/pg':
         specifier: ^8.20.0
         version: 8.20.0

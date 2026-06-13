@@ -3,10 +3,10 @@ import { and, asc, eq, isNull, lte } from 'drizzle-orm';
 import type { DrizzleDb } from '../../database.js';
 import { schedules } from '../../schema/schedules.js';
 import type { ScheduleRow } from '../../schema/schedules.js';
-import { Schedule } from '@domain/entities/schedule.js';
-import type { ScheduleStatus } from '@domain/entities/schedule.js';
-import { EntityKey } from '@domain/entities/entity-key.js';
-import type { ICurrentTenantProvider } from '@domain/interfaces/current-tenant-provider.interface.js';
+import { Schedule } from '@taktflow/domain/entities/schedule.js';
+import type { ScheduleStatus } from '@taktflow/domain/entities/schedule.js';
+import { EntityKey } from '@taktflow/domain/entities/entity-key.js';
+import type { ICurrentTenantProvider } from '@taktflow/domain/interfaces/current-tenant-provider.interface.js';
 import { EntityBaseReadonlyRepository } from './entity-base-readonly-repository.js';
 
 export class ScheduleReadonlyRepository extends EntityBaseReadonlyRepository<Schedule> {

@@ -1,4 +1,4 @@
-import type { User, UserRole } from '@domain/entities/user.js';
+import type { User, UserRole } from '@taktflow/domain/entities/user.js';
 
 export interface IUserService {
   create(request: {

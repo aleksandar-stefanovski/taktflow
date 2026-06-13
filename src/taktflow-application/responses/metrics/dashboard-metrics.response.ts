@@ -1,4 +1,4 @@
-import type { TenantMetrics } from '@domain/entities/tenant-metrics.js';
+import type { TenantMetrics } from '@taktflow/domain/entities/tenant-metrics.js';
 
 export class DashboardMetricsResponse {
   readonly tenantId:             string;

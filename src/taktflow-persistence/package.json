@@ -6,9 +6,9 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
-    ".": {
-      "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+    "./*.js": {
+      "types": "./dist/*.d.ts",
+      "default": "./dist/*.js"
     }
   },
   "scripts": {
@@ -18,7 +18,6 @@
     "migrate": "node --require tsx/cjs node_modules/drizzle-kit/bin.cjs migrate"
   },
   "dependencies": {
-    "@taktflow/abstractions": "workspace:*",
     "@taktflow/domain": "workspace:*",
     "drizzle-orm": "^0.38.0",
     "pg": "^8.13.0",

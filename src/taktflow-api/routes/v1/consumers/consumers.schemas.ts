@@ -4,7 +4,7 @@ import {
   CreatePushConsumerSchema,
   CreatePullConsumerSchema,
   UpdateConsumerSchema,
-} from '@application/validators/consumer-validators.js';
+} from '@taktflow/application/validators/consumer-validators.js';
 import { PaginationSchema } from '@api/swagger/pagination-schema.js';
 import { zodToJsonSchema, paginatedResponseSchema, ErrorResponseSchema } from '@api/swagger/api-schemas.js';
 

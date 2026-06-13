@@ -1,4 +1,4 @@
-import type { Tenant, PlanTier } from '@domain/entities/tenant.js';
+import type { Tenant, PlanTier } from '@taktflow/domain/entities/tenant.js';
 
 export class TenantResponse {
   readonly id:        string;

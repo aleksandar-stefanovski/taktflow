@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
-import { ProduceEventSchema, AcknowledgeEventSchema } from '@application/validators/event-validators.js';
-import { ConsumeEventsQuerySchema }                   from '@application/validators/tenant-validators.js';
+import { ProduceEventSchema, AcknowledgeEventSchema } from '@taktflow/application/validators/event-validators.js';
+import { ConsumeEventsQuerySchema }                   from '@taktflow/application/validators/tenant-validators.js';
 import { PaginationSchema }                           from '@api/swagger/pagination-schema.js';
 import { zodToJsonSchema, paginatedResponseSchema, ErrorResponseSchema } from '@api/swagger/api-schemas.js';
 

@@ -3,9 +3,9 @@ import { and, eq, isNull } from 'drizzle-orm';
 import type { DrizzleDb } from '../database.js';
 import { apiKeys } from '../schema/api-keys.js';
 import type { ApiKeyRow } from '../schema/api-keys.js';
-import { ApiKey } from '@domain/entities/api-key.js';
-import type { IApiKeyRepository } from '@domain/interfaces/api-key-repository.interface.js';
-import type { ICurrentTenantProvider } from '@domain/interfaces/current-tenant-provider.interface.js';
+import { ApiKey } from '@taktflow/domain/entities/api-key.js';
+import type { IApiKeyRepository } from '@taktflow/domain/interfaces/api-key-repository.interface.js';
+import type { ICurrentTenantProvider } from '@taktflow/domain/interfaces/current-tenant-provider.interface.js';
 import { ApiKeyReadonlyRepository } from './readonly/api-key-readonly-repository.js';
 import { EntityBaseRepository } from './entity-base-repository.js';
 

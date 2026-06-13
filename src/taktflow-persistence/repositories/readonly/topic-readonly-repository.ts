@@ -3,10 +3,10 @@ import { and, eq, isNull } from 'drizzle-orm';
 import type { DrizzleDb } from '../../database.js';
 import { topics } from '../../schema/topics.js';
 import type { TopicRow } from '../../schema/topics.js';
-import { Topic } from '@domain/entities/topic.js';
-import type { TopicConfig } from '@domain/value-objects/topic-config.js';
-import { EntityKey } from '@domain/entities/entity-key.js';
-import type { ICurrentTenantProvider } from '@domain/interfaces/current-tenant-provider.interface.js';
+import { Topic } from '@taktflow/domain/entities/topic.js';
+import type { TopicConfig } from '@taktflow/domain/value-objects/topic-config.js';
+import { EntityKey } from '@taktflow/domain/entities/entity-key.js';
+import type { ICurrentTenantProvider } from '@taktflow/domain/interfaces/current-tenant-provider.interface.js';
 import { EntityBaseReadonlyRepository } from './entity-base-readonly-repository.js';
 
 export class TopicReadonlyRepository extends EntityBaseReadonlyRepository<Topic> {

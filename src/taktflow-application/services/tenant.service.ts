@@ -1,6 +1,6 @@
-import type { ITenantRootRepository } from '@domain/interfaces/tenant-root-repository.interface.js';
-import type { Tenant } from '@domain/entities/tenant.js';
-import { NotFoundException } from '@domain/exceptions/not-found-exception.js';
+import type { ITenantRootRepository } from '@taktflow/domain/interfaces/tenant-root-repository.interface.js';
+import type { Tenant } from '@taktflow/domain/entities/tenant.js';
+import { NotFoundException } from '@taktflow/domain/exceptions/not-found-exception.js';
 
 import type { IUsageService }   from '@application/interfaces/usage-service.interface.js';
 import type { ITenantService }  from '../interfaces/tenant-service.interface.js';

@@ -1,12 +1,13 @@
-import { pgTable, uuid, varchar, timestamp } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, varchar, integer, timestamp } from 'drizzle-orm/pg-core';
 
 export const tenants = pgTable('tenants', {
-  id:        uuid('id').primaryKey().defaultRandom(),
-  name:      varchar('name', { length: 255 }).notNull(),
-  plan:      varchar('plan', { length: 50 }).notNull().default('starter'),
-  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
-  deletedAt: timestamp('deleted_at', { withTimezone: true }),
+  id:                      uuid('id').primaryKey().defaultRandom(),
+  name:                    varchar('name', { length: 255 }).notNull(),
+  plan:                    varchar('plan', { length: 50 }).notNull().default('starter'),
+  maxPayloadBytesOverride: integer('max_payload_bytes_override'),
+  createdAt:               timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt:               timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  deletedAt:               timestamp('deleted_at', { withTimezone: true }),
 });
 
 export type TenantRow = typeof tenants.$inferSelect;

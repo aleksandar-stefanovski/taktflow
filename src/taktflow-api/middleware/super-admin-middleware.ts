@@ -1,8 +1,8 @@
 import type { FastifyRequest, FastifyReply } from 'fastify';
 
-import { ForbiddenException } from '@domain/exceptions/forbidden-exception.js';
-import { UnauthorizedException } from '@domain/exceptions/unauthorized-exception.js';
-import { TokenService } from '@infrastructure/auth/token-service.js';
+import { ForbiddenException } from '@taktflow/domain/exceptions/forbidden-exception.js';
+import { UnauthorizedException } from '@taktflow/domain/exceptions/unauthorized-exception.js';
+import { TokenService } from '@taktflow/infra/auth/token-service.js';
 import { authConfig } from '@api/config/auth.config.js';
 
 const tokenService = new TokenService(

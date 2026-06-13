@@ -1,6 +1,6 @@
 import { SignJWT, jwtVerify, errors as JoseErrors } from 'jose';
 
-import { UnauthorizedException } from '@domain/exceptions/unauthorized-exception.js';
+import { UnauthorizedException } from '@taktflow/domain/exceptions/unauthorized-exception.js';
 
 export class TokenService {
   private readonly accessSecret:  Uint8Array;

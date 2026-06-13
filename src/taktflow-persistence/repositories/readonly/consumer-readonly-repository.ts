@@ -4,10 +4,10 @@ import { firstCount } from '../../query.helper.js';
 import type { DrizzleDb } from '../../database.js';
 import { consumers } from '../../schema/consumers.js';
 import type { ConsumerRow } from '../../schema/consumers.js';
-import { Consumer } from '@domain/entities/consumer.js';
-import type { ConsumerType, ConsumerStatus } from '@domain/entities/consumer.js';
-import { EntityKey } from '@domain/entities/entity-key.js';
-import type { ICurrentTenantProvider } from '@domain/interfaces/current-tenant-provider.interface.js';
+import { Consumer } from '@taktflow/domain/entities/consumer.js';
+import type { ConsumerType, ConsumerStatus } from '@taktflow/domain/entities/consumer.js';
+import { EntityKey } from '@taktflow/domain/entities/entity-key.js';
+import type { ICurrentTenantProvider } from '@taktflow/domain/interfaces/current-tenant-provider.interface.js';
 import { EntityBaseReadonlyRepository } from './entity-base-readonly-repository.js';
 
 export class ConsumerReadonlyRepository extends EntityBaseReadonlyRepository<Consumer> {

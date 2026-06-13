@@ -1,6 +1,6 @@
-import type { ITenantMetricsRepository } from '@domain/interfaces/tenant-metrics-repository.interface.js';
-import type { TenantMetrics }            from '@domain/entities/tenant-metrics.js';
-import { NotFoundException }             from '@domain/exceptions/not-found-exception.js';
+import type { ITenantMetricsRepository } from '@taktflow/domain/interfaces/tenant-metrics-repository.interface.js';
+import type { TenantMetrics }            from '@taktflow/domain/entities/tenant-metrics.js';
+import { NotFoundException }             from '@taktflow/domain/exceptions/not-found-exception.js';
 import type { IDashboardService }        from '../interfaces/dashboard-service.interface.js';
 
 export class DashboardService implements IDashboardService {

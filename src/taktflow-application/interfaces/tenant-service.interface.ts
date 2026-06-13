@@ -1,4 +1,4 @@
-import type { Tenant } from '@domain/entities/tenant.js';
+import type { Tenant } from '@taktflow/domain/entities/tenant.js';
 
 export interface ITenantService {
   getById(tenantId: string): Promise<Tenant>;

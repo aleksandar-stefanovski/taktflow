@@ -1,8 +1,8 @@
 import type { FastifyInstance, FastifyError } from 'fastify';
 import { ZodError } from 'zod';
 
-import { DomainException } from '@domain/exceptions/domain-exception.js';
-import { ValidationException } from '@domain/exceptions/validation-exception.js';
+import { DomainException } from '@taktflow/domain/exceptions/domain-exception.js';
+import { ValidationException } from '@taktflow/domain/exceptions/validation-exception.js';
 
 export function registerExceptionHandler(app: FastifyInstance): void {
   app.setErrorHandler((error: FastifyError | Error, request, reply) => {

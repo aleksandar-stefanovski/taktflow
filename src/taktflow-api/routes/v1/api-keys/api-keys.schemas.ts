@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { CreateApiKeySchema } from '@application/validators/api-key-validators.js';
+import { CreateApiKeySchema } from '@taktflow/application/validators/api-key-validators.js';
 import { PaginationSchema }   from '@api/swagger/pagination-schema.js';
 import { zodToJsonSchema, paginatedResponseSchema, ErrorResponseSchema } from '@api/swagger/api-schemas.js';
 

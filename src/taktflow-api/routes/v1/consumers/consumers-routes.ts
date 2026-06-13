@@ -4,12 +4,12 @@ import {
   CreatePushConsumerSchema,
   CreatePullConsumerSchema,
   UpdateConsumerSchema,
-} from '@application/validators/consumer-validators.js';
-import { CreatePushConsumerResponse } from '@application/responses/consumers/create-push-consumer.response.js';
-import { CreatePullConsumerResponse } from '@application/responses/consumers/create-pull-consumer.response.js';
-import { ConsumerDetailResponse }     from '@application/responses/consumers/consumer-detail.response.js';
-import { ConsumerHealthResponse }     from '@application/responses/consumers/consumer-health.response.js';
-import { ConsumerSummaryResponse }    from '@application/responses/consumers/consumer-summary.response.js';
+} from '@taktflow/application/validators/consumer-validators.js';
+import { CreatePushConsumerResponse } from '@taktflow/application/responses/consumers/create-push-consumer.response.js';
+import { CreatePullConsumerResponse } from '@taktflow/application/responses/consumers/create-pull-consumer.response.js';
+import { ConsumerDetailResponse }     from '@taktflow/application/responses/consumers/consumer-detail.response.js';
+import { ConsumerHealthResponse }     from '@taktflow/application/responses/consumers/consumer-health.response.js';
+import { ConsumerSummaryResponse }    from '@taktflow/application/responses/consumers/consumer-summary.response.js';
 
 import { jwtMiddleware }                               from '@api/middleware/jwt-middleware.js';
 import { consumerSchemas, ListConsumersQuerySchema }   from './consumers.schemas.js';

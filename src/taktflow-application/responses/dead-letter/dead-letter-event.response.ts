@@ -1,4 +1,4 @@
-import type { DeadLetterEvent } from '@domain/entities/dead-letter-event.js';
+import type { DeadLetterEvent } from '@taktflow/domain/entities/dead-letter-event.js';
 
 export class DeadLetterEventResponse {
   readonly id:               string;

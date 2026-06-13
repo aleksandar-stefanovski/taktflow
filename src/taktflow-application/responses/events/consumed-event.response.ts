@@ -1,4 +1,4 @@
-import type { ClaimedEvent } from '@domain/types/claimed-event.type.js';
+import type { ClaimedEvent } from '@taktflow/domain/types/claimed-event.type.js';
 
 export class ConsumedEventResponse {
   readonly id:          string;

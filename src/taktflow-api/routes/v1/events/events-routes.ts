@@ -1,11 +1,11 @@
 import type { FastifyInstance } from 'fastify';
 
-import { ProduceEventSchema, AcknowledgeEventSchema } from '@application/validators/event-validators.js';
-import { ConsumeEventsQuerySchema }  from '@application/validators/tenant-validators.js';
-import { ProduceEventResponse }      from '@application/responses/events/produce-event.response.js';
-import { ConsumedEventResponse }     from '@application/responses/events/consumed-event.response.js';
-import { EventSummaryResponse }      from '@application/responses/events/event-summary.response.js';
-import { GetEventDetailResponse }    from '@application/responses/events/get-event-detail.response.js';
+import { ProduceEventSchema, AcknowledgeEventSchema } from '@taktflow/application/validators/event-validators.js';
+import { ConsumeEventsQuerySchema }  from '@taktflow/application/validators/tenant-validators.js';
+import { ProduceEventResponse }      from '@taktflow/application/responses/events/produce-event.response.js';
+import { ConsumedEventResponse }     from '@taktflow/application/responses/events/consumed-event.response.js';
+import { EventSummaryResponse }      from '@taktflow/application/responses/events/event-summary.response.js';
+import { GetEventDetailResponse }    from '@taktflow/application/responses/events/get-event-detail.response.js';
 
 import { apiKeyMiddleware } from '@api/middleware/api-key-middleware.js';
 import { jwtMiddleware }    from '@api/middleware/jwt-middleware.js';

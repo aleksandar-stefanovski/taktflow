@@ -32,6 +32,11 @@ export async function connectDatabase(config: {
   return drizzle(pool, { schema });
 }
 
+export async function disconnect(db: DrizzleDb): Promise<void> {
+  const pool = (db as unknown as { $client: Pool }).$client;
+  await pool.end();
+}
+
 export async function runMigrations(db: DrizzleDb): Promise<void> {
   const currentFile = fileURLToPath(import.meta.url);
   const packageDir  = currentFile.includes('/dist/') || currentFile.includes('\\dist\\')

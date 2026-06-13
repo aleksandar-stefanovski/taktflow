@@ -1,5 +1,5 @@
-import type { ICurrentTenantProvider } from '@domain/interfaces/current-tenant-provider.interface.js';
-import { UnauthorizedException } from '@domain/exceptions/unauthorized-exception.js';
+import type { ICurrentTenantProvider } from '@taktflow/domain/interfaces/current-tenant-provider.interface.js';
+import { UnauthorizedException } from '@taktflow/domain/exceptions/unauthorized-exception.js';
 
 import { tenantContextStore } from './tenant-context-store.js';
 

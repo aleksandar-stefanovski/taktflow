@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { CreateScheduleSchema } from '@application/validators/schedule-validators.js';
+import { CreateScheduleSchema } from '@taktflow/application/validators/schedule-validators.js';
 import { PaginationSchema }     from '@api/swagger/pagination-schema.js';
 import { zodToJsonSchema, paginatedResponseSchema, ErrorResponseSchema } from '@api/swagger/api-schemas.js';
 

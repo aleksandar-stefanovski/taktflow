@@ -3,10 +3,10 @@ import { and, eq, type SQL } from 'drizzle-orm';
 import type { DrizzleDb } from '../../database.js';
 import { eventDeliveries } from '../../schema/event-deliveries.js';
 import type { EventDeliveryRow } from '../../schema/event-deliveries.js';
-import { EventDelivery } from '@domain/entities/event-delivery.js';
-import type { DeliveryStatus } from '@domain/entities/event-delivery.js';
-import { EntityKey } from '@domain/entities/entity-key.js';
-import type { ICurrentTenantProvider } from '@domain/interfaces/current-tenant-provider.interface.js';
+import { EventDelivery } from '@taktflow/domain/entities/event-delivery.js';
+import type { DeliveryStatus } from '@taktflow/domain/entities/event-delivery.js';
+import { EntityKey } from '@taktflow/domain/entities/entity-key.js';
+import type { ICurrentTenantProvider } from '@taktflow/domain/interfaces/current-tenant-provider.interface.js';
 import { EntityBaseReadonlyRepository } from './entity-base-readonly-repository.js';
 
 export class EventDeliveryReadonlyRepository extends EntityBaseReadonlyRepository<EventDelivery> {

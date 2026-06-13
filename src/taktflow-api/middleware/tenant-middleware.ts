@@ -1,5 +1,5 @@
-import { ForbiddenException } from '@domain/exceptions/forbidden-exception.js';
-import { UnauthorizedException } from '@domain/exceptions/unauthorized-exception.js';
+import { ForbiddenException } from '@taktflow/domain/exceptions/forbidden-exception.js';
+import { UnauthorizedException } from '@taktflow/domain/exceptions/unauthorized-exception.js';
 
 export function requireTenantId(tenantId: string | undefined): string {
   if (!tenantId) throw new UnauthorizedException('Authentication required');

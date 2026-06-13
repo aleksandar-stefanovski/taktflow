@@ -4,11 +4,11 @@ import { firstCount } from '../query.helper.js';
 import type { DrizzleDb } from '../database.js';
 import { tenants } from '../schema/tenants.js';
 import type { TenantRow } from '../schema/tenants.js';
-import type { Tenant } from '@domain/entities/tenant.js';
-import type { PlanTier } from '@domain/entities/tenant.js';
-import { Tenant as TenantEntity } from '@domain/entities/tenant.js';
-import { EntityKey } from '@domain/entities/entity-key.js';
-import type { ITenantRootRepository } from '@domain/interfaces/tenant-root-repository.interface.js';
+import type { Tenant } from '@taktflow/domain/entities/tenant.js';
+import type { PlanTier } from '@taktflow/domain/entities/tenant.js';
+import { Tenant as TenantEntity } from '@taktflow/domain/entities/tenant.js';
+import { EntityKey } from '@taktflow/domain/entities/entity-key.js';
+import type { ITenantRootRepository } from '@taktflow/domain/interfaces/tenant-root-repository.interface.js';
 
 export class TenantRepository implements ITenantRootRepository {
   constructor(private readonly db: DrizzleDb) {}
@@ -49,11 +49,12 @@ export class TenantRepository implements ITenantRootRepository {
     const rows = await this.db
       .insert(tenants)
       .values({
-        id:        tenant.id,
-        name:      tenant.name,
-        plan:      tenant.plan,
-        createdAt: tenant.createdAt,
-        updatedAt: tenant.updatedAt,
+        id:                      tenant.id,
+        name:                    tenant.name,
+        plan:                    tenant.plan,
+        maxPayloadBytesOverride: tenant.maxPayloadBytesOverride ?? null,
+        createdAt:               tenant.createdAt,
+        updatedAt:               tenant.updatedAt,
       })
       .returning();
 
@@ -68,6 +69,7 @@ export class TenantRepository implements ITenantRootRepository {
       .set({
         ...(updates.name !== undefined && { name: updates.name }),
         ...(updates.plan !== undefined && { plan: updates.plan }),
+        ...(updates.maxPayloadBytesOverride !== undefined && { maxPayloadBytesOverride: updates.maxPayloadBytesOverride }),
         updatedAt: new Date(),
       })
       .where(eq(tenants.id, id))
@@ -110,11 +112,12 @@ export class TenantRepository implements ITenantRootRepository {
 
   static toDomain(row: TenantRow): Tenant {
     const entity = new TenantEntity({
-      key:       EntityKey.reconstitute(row.id, null),
-      name:      row.name,
-      plan:      row.plan as PlanTier,
-      createdAt: row.createdAt,
-      updatedAt: row.updatedAt,
+      key:                     EntityKey.reconstitute(row.id, null),
+      name:                    row.name,
+      plan:                    row.plan as PlanTier,
+      maxPayloadBytesOverride: row.maxPayloadBytesOverride ?? null,
+      createdAt:               row.createdAt,
+      updatedAt:               row.updatedAt,
     });
     entity.deletedAt = row.deletedAt ?? null;
     return entity;

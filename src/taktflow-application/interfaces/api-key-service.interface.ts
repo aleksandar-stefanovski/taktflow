@@ -1,4 +1,4 @@
-import type { ApiKey }              from '@domain/entities/api-key.js';
+import type { ApiKey }              from '@taktflow/domain/entities/api-key.js';
 import type { CreateApiKeyRequest } from '../requests/api-keys/create-api-key.request.js';
 import type { PaginationQuery }     from '../requests/pagination.request.js';
 import type { PaginatedResponse }     from '../responses/paginated-response.js';

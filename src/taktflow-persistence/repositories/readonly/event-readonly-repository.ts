@@ -4,10 +4,10 @@ import { firstCount } from '../../query.helper.js';
 import type { DrizzleDb } from '../../database.js';
 import { events } from '../../schema/events.js';
 import type { EventRow } from '../../schema/events.js';
-import { Event } from '@domain/entities/event.js';
-import type { EventStatus, EventSource } from '@domain/entities/event.js';
-import { EntityKey } from '@domain/entities/entity-key.js';
-import type { ICurrentTenantProvider } from '@domain/interfaces/current-tenant-provider.interface.js';
+import { Event } from '@taktflow/domain/entities/event.js';
+import type { EventStatus, EventSource } from '@taktflow/domain/entities/event.js';
+import { EntityKey } from '@taktflow/domain/entities/entity-key.js';
+import type { ICurrentTenantProvider } from '@taktflow/domain/interfaces/current-tenant-provider.interface.js';
 import { EntityBaseReadonlyRepository } from './entity-base-readonly-repository.js';
 
 export class EventReadonlyRepository extends EntityBaseReadonlyRepository<Event> {

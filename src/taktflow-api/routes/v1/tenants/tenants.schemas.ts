@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { UpdateTenantSchema, ReactivateTenantSchema } from '@application/validators/tenant-validators.js';
+import { UpdateTenantSchema, ReactivateTenantSchema } from '@taktflow/application/validators/tenant-validators.js';
 import { zodToJsonSchema, ErrorResponseSchema } from '@api/swagger/api-schemas.js';
 
 const TenantSchema = z.object({
