@@ -1,10 +1,10 @@
 import { EntityBase } from './entity-base.js';
 import { EntityKey } from './entity-key.js';
-import type { HasSoftDelete } from './has-soft-delete.interface.js';
+import type { HasDelete } from './has-delete.interface.js';
 
 export type UserRole = 'super_admin' | 'owner';
 
-export class User extends EntityBase implements HasSoftDelete {
+export class User extends EntityBase implements HasDelete {
   readonly email:             string;
   passwordHash:               string;
   readonly firstName:         string;

@@ -8,25 +8,24 @@ import { EntityKey } from '@domain/entities/entity-key.js';
 import { NotFoundException } from '@domain/exceptions/not-found-exception.js';
 import { ValidationException } from '@domain/exceptions/validation-exception.js';
 
-import type { IEventQueueService } from '../interfaces/event-queue-service.interface.js';
-import type { ClaimedEvent } from '../interfaces/claimed-event.interface.js';
-import type { IConsumerHealth } from '../interfaces/consumer-health.interface.js';
+import type { IEventQueueService, ClaimedEvent } from '@domain/interfaces/event-queue-service.interface.js';
+import type { IConsumerService }                 from '../interfaces/consumer-service.interface.js';
+import type { EventDelivery } from '@domain/entities/event-delivery.js';
 import type { CreatePushConsumerRequest } from '../requests/consumers/create-push-consumer.request.js';
 import type { CreatePullConsumerRequest } from '../requests/consumers/create-pull-consumer.request.js';
 import type { ListConsumersQuery } from '../requests/consumers/list-consumers.request.js';
 import type { UpdateConsumerRequest } from '../requests/consumers/update-consumer.request.js';
 import type { AcknowledgeEventRequest } from '../requests/events/acknowledge-event.request.js';
-import { PaginatedResult } from '../responses/paginated-result.js';
+import { PaginatedResponse } from '../responses/paginated-response.js';
 
-export class ConsumerService {
+export class ConsumerService implements IConsumerService {
   constructor(
     private readonly consumers:          IConsumerRepository,
     private readonly topics:             ITopicRepository,
     private readonly deliveries:         IEventDeliveryRepository,
-    private readonly queue:              IEventQueueService,
-    private readonly retryBaseDelayMs:   number,
-    private readonly maxRetryAttempts:   number,
-    private readonly alertAfterFailures: number,
+    private readonly queue:            IEventQueueService,
+    private readonly retryBaseDelayMs: number,
+    private readonly maxRetryAttempts: number,
   ) {}
 
   private getRetryDelay(attempt: number): number {
@@ -39,15 +38,13 @@ export class ConsumerService {
 
     const secret   = randomBytes(32).toString('hex');
     const consumer = new Consumer({
-      key:               new EntityKey(request.tenantId),
+      key:               EntityKey.create(request.tenantId),
       topicId:           request.topicId,
       name:              request.name,
       type:              'push',
-      url:               request.url,
+      url:         request.url,
       secret,
-      environment:       request.environment,
-      alertEmail:        request.alertEmail ?? null,
-      alertAfterFailures: this.alertAfterFailures,
+      environment: request.environment,
     });
 
     return this.consumers.create(consumer);
@@ -59,15 +56,13 @@ export class ConsumerService {
 
     const secret   = randomBytes(32).toString('hex');
     const consumer = new Consumer({
-      key:               new EntityKey(request.tenantId),
-      topicId:           request.topicId,
-      name:              request.name,
-      type:              'pull',
-      url:               null,
+      key:         EntityKey.create(request.tenantId),
+      topicId:     request.topicId,
+      name:        request.name,
+      type:        'pull',
+      url:         null,
       secret,
-      environment:       request.environment,
-      alertEmail:        request.alertEmail ?? null,
-      alertAfterFailures: this.alertAfterFailures,
+      environment: request.environment,
     });
 
     return this.consumers.create(consumer);
@@ -79,34 +74,13 @@ export class ConsumerService {
     return consumer;
   }
 
-  async getHealth(consumerId: string, tenantId: string): Promise<IConsumerHealth> {
+  async getHealth(consumerId: string, tenantId: string): Promise<EventDelivery[]> {
     const consumer = await this.consumers.findById(consumerId);
     if (!consumer) throw new NotFoundException('Consumer', consumerId);
-
-    const allDeliveries = await this.deliveries.findByConsumerId(consumerId);
-
-    const health: IConsumerHealth = {
-      consumerId,
-      total:      allDeliveries.length,
-      pending:    0,
-      processing: 0,
-      delivered:  0,
-      failed:     0,
-      deadLetter: 0,
-    };
-
-    for (const delivery of allDeliveries) {
-      if (delivery.status === 'pending')     health.pending    += 1;
-      if (delivery.status === 'processing')  health.processing += 1;
-      if (delivery.status === 'delivered')   health.delivered  += 1;
-      if (delivery.status === 'failed')      health.failed     += 1;
-      if (delivery.status === 'dead_letter') health.deadLetter += 1;
-    }
-
-    return health;
+    return this.deliveries.findByConsumerId(consumerId);
   }
 
-  async list(query: ListConsumersQuery & { tenantId: string }): Promise<PaginatedResult<Consumer>> {
+  async list(query: ListConsumersQuery & { tenantId: string }): Promise<PaginatedResponse<Consumer>> {
     const limit  = query.pageSize;
     const offset = (query.page - 1) * query.pageSize;
 
@@ -120,7 +94,7 @@ export class ConsumerService {
           this.consumers.count(),
         ]);
 
-    return new PaginatedResult(items, totalCount, query.page, query.pageSize);
+    return new PaginatedResponse(items, totalCount, query.page, query.pageSize);
   }
 
   async update(id: string, request: UpdateConsumerRequest & { tenantId: string }): Promise<Consumer> {
@@ -134,7 +108,6 @@ export class ConsumerService {
     return this.consumers.update(id, {
       ...(request.name !== undefined && { name: request.name }),
       ...(request.url !== undefined && { url: request.url }),
-      ...(request.alertEmail !== undefined && { alertEmail: request.alertEmail }),
     });
   }
 

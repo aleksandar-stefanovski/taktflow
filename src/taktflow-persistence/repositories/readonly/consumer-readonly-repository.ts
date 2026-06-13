@@ -1,4 +1,5 @@
 import { and, count, eq, isNull } from 'drizzle-orm';
+import { firstCount } from '../../query.helper.js';
 
 import type { DrizzleDb } from '../../database.js';
 import { consumers } from '../../schema/consumers.js';
@@ -43,23 +44,21 @@ export class ConsumerReadonlyRepository extends EntityBaseReadonlyRepository<Con
         isNull(consumers.deletedAt),
       ));
 
-    return result[0]?.total ?? 0;
+    return firstCount(result);
   }
 
   static toDomain(row: ConsumerRow): Consumer {
     const entity = new Consumer({
-      key:                new EntityKey(row.id, row.tenantId),
-      topicId:            row.topicId,
-      name:               row.name,
-      type:               row.type as ConsumerType,
-      url:                row.url ?? null,
-      secret:             row.secret,
-      environment:        row.environment,
-      status:             row.status as ConsumerStatus,
-      alertEmail:         row.alertEmail ?? null,
-      alertAfterFailures: row.alertAfterFailures,
-      createdAt:          row.createdAt,
-      updatedAt:          row.updatedAt,
+      key:         EntityKey.reconstitute(row.id, row.tenantId),
+      topicId:     row.topicId,
+      name:        row.name,
+      type:        row.type as ConsumerType,
+      url:         row.url ?? null,
+      secret:      row.secret,
+      environment: row.environment,
+      status:      row.status as ConsumerStatus,
+      createdAt:   row.createdAt,
+      updatedAt:   row.updatedAt,
     });
     entity.deletedAt = row.deletedAt ?? null;
     return entity;

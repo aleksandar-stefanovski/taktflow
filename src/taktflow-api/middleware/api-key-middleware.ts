@@ -2,7 +2,9 @@ import { createHash, timingSafeEqual } from 'node:crypto';
 
 import type { FastifyRequest, FastifyReply } from 'fastify';
 
+import { NotFoundException } from '@domain/exceptions/not-found-exception.js';
 import { UnauthorizedException } from '@domain/exceptions/unauthorized-exception.js';
+import { TenantDeletedException } from '@domain/exceptions/tenant-deleted-exception.js';
 import { tenantContextStore } from '@infrastructure/context/tenant-context-store.js';
 import { HTTP_CONSTANTS } from '@api/constants/http.constants.js';
 
@@ -26,10 +28,17 @@ export async function apiKeyMiddleware(
     throw new UnauthorizedException('Invalid API key');
   }
 
-  request.tenantId = record.tenantId;
+  const tenantId = record.key.tenantId;
+  if (!tenantId) throw new UnauthorizedException('API key has no associated tenant');
+
+  const tenant = await request.server.repos.tenants.findByIdIncludingDeleted(tenantId);
+  if (!tenant) throw new NotFoundException('Tenant', tenantId);
+  if (tenant.deletedAt !== null) throw new TenantDeletedException();
+
+  request.tenantId = tenantId;
 
   const context = tenantContextStore.getStore();
-  if (context) context.tenantId = record.tenantId;
+  if (context) context.tenantId = tenantId;
 
   void request.server.repos.apiKeys
     .update(record.id, { lastUsed: new Date() })

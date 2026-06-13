@@ -10,19 +10,21 @@ WORKDIR /app
 FROM base AS deps
 # Copy workspace manifests only — enables layer caching on source changes
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
-COPY src/taktflow-abstractions/package.json   ./src/taktflow-abstractions/
-COPY src/taktflow-api/package.json            ./src/taktflow-api/
-COPY src/taktflow-application/package.json    ./src/taktflow-application/
 COPY src/taktflow-domain/package.json         ./src/taktflow-domain/
-COPY src/taktflow-infrastructure/package.json ./src/taktflow-infrastructure/
+COPY src/taktflow-utils/package.json          ./src/taktflow-utils/
 COPY src/taktflow-persistence/package.json    ./src/taktflow-persistence/
+COPY src/taktflow-application/package.json    ./src/taktflow-application/
+COPY src/taktflow-infrastructure/package.json ./src/taktflow-infrastructure/
+COPY src/taktflow-api/package.json            ./src/taktflow-api/
 COPY src/taktflow-worker/package.json         ./src/taktflow-worker/
 RUN pnpm install --frozen-lockfile
 
 # ── development ───────────────────────────────────────────────────────────────
 FROM base AS development
-COPY --from=deps /app/node_modules                    ./node_modules
-COPY --from=deps /app/src/taktflow-api/node_modules   ./src/taktflow-api/node_modules
+# Copy root node_modules AND every workspace package node_modules — pnpm installs
+# each package's dependencies into that package's own node_modules
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/src          ./src
 COPY . .
 EXPOSE 3000
 
@@ -31,7 +33,7 @@ FROM base AS builder
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN pnpm --filter @taktflow/domain       build
-RUN pnpm --filter @taktflow/abstractions build
+RUN pnpm --filter @taktflow/utils        build
 RUN pnpm --filter @taktflow/application  build
 RUN pnpm --filter @taktflow/persistence  build
 RUN pnpm --filter @taktflow/infra        build

@@ -20,7 +20,7 @@
       "@persistence/*":    ["./src/taktflow-persistence/*"],
       "@infrastructure/*": ["./src/taktflow-infrastructure/*"],
       "@application/*":    ["./src/taktflow-application/*"],
-      "@abstractions/*":   ["./src/taktflow-abstractions/*"]
+      "@utils/*":          ["./src/taktflow-utils/*"]
     }
   }
 }

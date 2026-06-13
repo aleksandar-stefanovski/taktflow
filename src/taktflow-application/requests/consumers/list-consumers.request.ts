@@ -1,3 +1,5 @@
-import type { PaginationQuery } from '../pagination.request.js';
+import type { z } from 'zod';
 
-export type ListConsumersQuery = PaginationQuery & { topicId?: string };
+import type { ListConsumersSchema } from '@application/validators/consumer-validators.js';
+
+export type ListConsumersQuery = z.infer<typeof ListConsumersSchema>;

@@ -8,6 +8,6 @@
     }
   },
   "references": [],
-  "include": ["entities", "interfaces", "exceptions", "value-objects"],
+  "include": ["entities", "interfaces", "exceptions", "value-objects", "types"],
   "exclude": ["node_modules", "dist"]
 }

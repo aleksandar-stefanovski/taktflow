@@ -1,4 +1,5 @@
 import { and, count, desc, eq, sql, type SQL } from 'drizzle-orm';
+import { firstCount } from '../../query.helper.js';
 
 import type { DrizzleDb } from '../../database.js';
 import { events } from '../../schema/events.js';
@@ -40,7 +41,7 @@ export class EventReadonlyRepository extends EntityBaseReadonlyRepository<Event>
       .from(events)
       .where(and(eq(events.topicId, topicId), eq(events.tenantId, this.tenantId)));
 
-    return result[0]?.total ?? 0;
+    return firstCount(result);
   }
 
   async findByIdempotencyKey(key: string): Promise<Event | null> {
@@ -63,12 +64,12 @@ export class EventReadonlyRepository extends EntityBaseReadonlyRepository<Event>
         sql`${events.createdAt} >= date_trunc('month', now())`,
       ));
 
-    return result[0]?.total ?? 0;
+    return firstCount(result);
   }
 
   static toDomain(row: EventRow): Event {
     return new Event({
-      key:            new EntityKey(row.id, row.tenantId),
+      key:            EntityKey.reconstitute(row.id, row.tenantId),
       topicId:        row.topicId,
       payload:        row.payload as Record<string, unknown>,
       status:         row.status as EventStatus,

@@ -5,14 +5,14 @@
     "outDir": "dist",
     "paths": {
       "@domain/*":         ["../taktflow-domain/*"],
-      "@abstractions/*":   ["../taktflow-abstractions/*"],
-      "@persistence/*":    ["./*"]
+      "@persistence/*":    ["./*"],
+      "@utils/*":          ["../taktflow-utils/*"]
     }
   },
   "references": [
     { "path": "../taktflow-domain" },
-    { "path": "../taktflow-abstractions" }
+    { "path": "../taktflow-utils" }
   ],
-  "include": ["schema", "database.ts", "repositories"],
+  "include": ["schema", "database.ts", "repositories", "interfaces", "queue", "query.helper.ts"],
   "exclude": ["node_modules", "dist"]
 }

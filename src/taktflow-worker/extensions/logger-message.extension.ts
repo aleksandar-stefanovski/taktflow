@@ -38,9 +38,6 @@ export function createLoggerMessages(logger: Logger) {
     logPartitionDropped: (partitionName: string) =>
       logger.info({ partitionName }, 'Expired event partition dropped'),
 
-    logAlertSent: (tenantId: string, consumerId: string) =>
-      logger.info({ tenantId, consumerId }, 'Failure alert sent to customer'),
-
     logHighMemoryUsage: (usedMb: number) =>
       logger.warn({ usedMb }, 'High heap memory usage detected'),
   };

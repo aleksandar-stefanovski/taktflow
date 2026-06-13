@@ -1,4 +1,5 @@
 import Fastify, { type FastifyInstance } from 'fastify';
+import compress from '@fastify/compress';
 
 import type { DrizzleDb } from '@persistence/database.js';
 
@@ -12,6 +13,7 @@ import { registerRoutes } from '@api/extensions/routes.extension.js';
 export async function buildApp(db: DrizzleDb): Promise<FastifyInstance> {
   const app = Fastify({ logger: { level: serverConfig.LOG_LEVEL } });
 
+  await app.register(compress, { threshold: serverConfig.COMPRESS_THRESHOLD_BYTES });
   await app.register(securityPlugin);
   await registerSwagger(app);
   await registerApiDependencies(app, db);

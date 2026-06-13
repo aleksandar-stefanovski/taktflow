@@ -31,7 +31,7 @@ export class UserReadonlyRepository extends EntityBaseReadonlyRepository<User> {
 
   static toDomain(row: UserRow): User {
     const entity = new User({
-      key:                new EntityKey(row.id, row.tenantId),
+      key:                EntityKey.reconstitute(row.id, row.tenantId),
       email:              row.email,
       passwordHash:       row.passwordHash,
       firstName:          row.firstName,

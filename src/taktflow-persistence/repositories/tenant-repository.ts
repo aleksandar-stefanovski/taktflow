@@ -1,4 +1,5 @@
 import { eq, desc, count, isNull, and } from 'drizzle-orm';
+import { firstCount } from '../query.helper.js';
 
 import type { DrizzleDb } from '../database.js';
 import { tenants } from '../schema/tenants.js';
@@ -41,7 +42,7 @@ export class TenantRepository implements ITenantRootRepository {
       .from(tenants)
       .where(isNull(tenants.deletedAt));
 
-    return result[0]?.total ?? 0;
+    return firstCount(result);
   }
 
   async create(tenant: Tenant): Promise<Tenant> {
@@ -77,9 +78,39 @@ export class TenantRepository implements ITenantRootRepository {
     return TenantRepository.toDomain(row);
   }
 
+  async softDelete(id: string): Promise<void> {
+    await this.db
+      .update(tenants)
+      .set({ deletedAt: new Date(), updatedAt: new Date() })
+      .where(eq(tenants.id, id));
+  }
+
+  async reactivate(id: string): Promise<Tenant> {
+    const rows = await this.db
+      .update(tenants)
+      .set({ deletedAt: null, updatedAt: new Date() })
+      .where(eq(tenants.id, id))
+      .returning();
+
+    const [row] = rows;
+    if (!row) throw new Error('Update returned no rows');
+    return TenantRepository.toDomain(row);
+  }
+
+  async findByIdIncludingDeleted(id: string): Promise<Tenant | null> {
+    const rows = await this.db
+      .select()
+      .from(tenants)
+      .where(eq(tenants.id, id))
+      .limit(1);
+
+    const [row] = rows;
+    return row ? TenantRepository.toDomain(row) : null;
+  }
+
   static toDomain(row: TenantRow): Tenant {
     const entity = new TenantEntity({
-      key:       new EntityKey(row.id, null),
+      key:       EntityKey.reconstitute(row.id, null),
       name:      row.name,
       plan:      row.plan as PlanTier,
       createdAt: row.createdAt,

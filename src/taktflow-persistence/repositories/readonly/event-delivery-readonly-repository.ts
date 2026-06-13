@@ -42,7 +42,7 @@ export class EventDeliveryReadonlyRepository extends EntityBaseReadonlyRepositor
 
   static toDomain(row: EventDeliveryRow): EventDelivery {
     return new EventDelivery({
-      key:            new EntityKey(row.id, row.tenantId),
+      key:            EntityKey.reconstitute(row.id, row.tenantId),
       eventId:        row.eventId,
       consumerId:     row.consumerId,
       status:         row.status as DeliveryStatus,

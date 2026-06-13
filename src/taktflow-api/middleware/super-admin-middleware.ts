@@ -1,5 +1,6 @@
 import type { FastifyRequest, FastifyReply } from 'fastify';
 
+import { ForbiddenException } from '@domain/exceptions/forbidden-exception.js';
 import { UnauthorizedException } from '@domain/exceptions/unauthorized-exception.js';
 import { TokenService } from '@infrastructure/auth/token-service.js';
 import { authConfig } from '@api/config/auth.config.js';
@@ -30,7 +31,7 @@ export async function superAdminMiddleware(
   }
 
   if (payload.role !== 'super_admin') {
-    throw new UnauthorizedException('Super admin access required');
+    throw new ForbiddenException();
   }
 
   request.userId = payload.sub;

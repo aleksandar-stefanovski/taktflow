@@ -1,0 +1,16 @@
+name: taktflow-staging
+
+services:
+  api:
+    environment:
+      NODE_ENV: staging
+      LOG_LEVEL: info
+      STRICT_SECURITY: "true"
+      CORS_ALLOW_ALL_ORIGINS: "false"
+      ENABLE_SWAGGER_UI: "true"
+      DASHBOARD_URL: https://staging.yourdomain.com
+
+  worker:
+    environment:
+      NODE_ENV: staging
+      LOG_LEVEL: info

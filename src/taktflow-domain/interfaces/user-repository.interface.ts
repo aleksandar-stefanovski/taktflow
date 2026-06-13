@@ -4,4 +4,6 @@ import type { IEntityBaseRepository } from './entity-base-repository.interface.j
 
 export interface IUserRepository
   extends IUserReadRepository,
-    IEntityBaseRepository<User> {}
+    IEntityBaseRepository<User> {
+  anonymize(id: string): Promise<void>;
+}

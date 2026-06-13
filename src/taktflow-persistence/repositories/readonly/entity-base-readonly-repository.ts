@@ -1,4 +1,5 @@
 import { and, count, desc, eq, isNull } from 'drizzle-orm';
+import { firstCount } from '../../query.helper.js';
 import type { SQL } from 'drizzle-orm';
 import type { PgTableWithColumns, TableConfig } from 'drizzle-orm/pg-core';
 
@@ -61,7 +62,7 @@ export abstract class EntityBaseReadonlyRepository<T extends EntityBase> {
       .from(this.table)
       .where(this.requiredFilters());
 
-    return result[0]?.total ?? 0;
+    return firstCount(result);
   }
 
   async exists(id: string): Promise<boolean> {

@@ -30,7 +30,7 @@ export class ApiKeyReadonlyRepository extends EntityBaseReadonlyRepository<ApiKe
 
   static toDomain(row: ApiKeyRow): ApiKey {
     const entity = new ApiKey({
-      key:         new EntityKey(row.id, row.tenantId),
+      key:         EntityKey.reconstitute(row.id, row.tenantId),
       name:        row.name,
       keyHash:     row.keyHash,
       keyPrefix:   row.keyPrefix,

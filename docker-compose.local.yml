@@ -1,0 +1,14 @@
+name: taktflow-local
+
+services:
+  api:
+    environment:
+      NODE_ENV: development
+      LOG_LEVEL: debug
+      STRICT_SECURITY: "false"
+      CORS_ALLOW_ALL_ORIGINS: "true"
+
+  worker:
+    environment:
+      NODE_ENV: development
+      LOG_LEVEL: debug

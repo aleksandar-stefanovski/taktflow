@@ -1,31 +1,63 @@
 import { createHash, createHmac } from 'node:crypto';
-import { canonicalJson } from '@application/helpers/canonical-json.helper.js';
+import { canonicalJson } from '@utils/helpers/canonical-json.helper.js';
 import { DELIVERY_HEADERS } from '@infrastructure/constants/delivery-headers.constants.js';
 import { tenantContextStore } from '@infrastructure/context/tenant-context-store.js';
-import type { QueuedEvent } from '@infrastructure/interfaces/queued-event.interface.js';
+import type { ClaimedEvent } from '@domain/types/claimed-event.type.js';
 
-import type { WorkerDependencies } from '../interfaces/worker-dependencies.interface.js';
-import type { Event } from '@domain/entities/event.js';
-import type { Consumer } from '@domain/entities/consumer.js';
-import type { Topic } from '@domain/entities/topic.js';
-import type { RetryService } from './retry-service.js';
-import type { MetricsService } from './metrics-service.js';
+import type { IEventQueueService }  from '@domain/interfaces/event-queue-service.interface.js';
+import type { IEventRepository }    from '@domain/interfaces/event-repository.interface.js';
+import type { IConsumerRepository } from '@domain/interfaces/consumer-repository.interface.js';
+import type { ITopicRepository }    from '@domain/interfaces/topic-repository.interface.js';
+import type { LoggerMessages }      from '../extensions/logger-message.extension.js';
+import type { WorkerConfig }        from '../config/worker.config.js';
+import type { Event }               from '@domain/entities/event.js';
+import type { Consumer }            from '@domain/entities/consumer.js';
+import type { Topic }               from '@domain/entities/topic.js';
+import type { IRetryService }       from '../interfaces/retry-service.interface.js';
+import type { IMetricsService }     from '../interfaces/metrics-service.interface.js';
+import type { IDeliveryService }    from '../interfaces/delivery-service.interface.js';
+import { sleep }                    from '../helpers/sleep.helper.js';
 
-export class DeliveryService {
-  private activeDeliveries = 0;
+export class DeliveryService implements IDeliveryService {
+  private activeDeliveries  = 0;
+  private intervalHandle: NodeJS.Timeout | null = null;
 
   constructor(
-    private readonly deps: WorkerDependencies,
-    private readonly retry: RetryService,
-    private readonly metrics: MetricsService,
+    private readonly queue:     IEventQueueService,
+    private readonly events:    IEventRepository,
+    private readonly consumers: IConsumerRepository,
+    private readonly topics:    ITopicRepository,
+    private readonly logger:    LoggerMessages,
+    private readonly config:    WorkerConfig,
+    private readonly retry:     IRetryService,
+    private readonly metrics:   IMetricsService,
   ) {}
 
-  getActiveDeliveries(): number {
-    return this.activeDeliveries;
+  start(): void {
+    this.intervalHandle = setInterval(() => {
+      void this.claimAndDeliver().catch((error: unknown) => {
+        this.logger.logWorkerLoopError('delivery', error as Error);
+      });
+    }, this.config.WORKER_POLL_INTERVAL_MS);
   }
 
-  async claimAndDeliver(): Promise<void> {
-    const deliveries = await this.deps.queue.claim(this.deps.config.batchSize);
+  stop(): void {
+    if (this.intervalHandle) {
+      clearInterval(this.intervalHandle);
+      this.intervalHandle = null;
+    }
+  }
+
+  async waitForDrain(): Promise<void> {
+    let elapsed = 0;
+    while (this.activeDeliveries > 0 && elapsed < this.config.WORKER_SHUTDOWN_MAX_WAIT_MS) {
+      await sleep(this.config.WORKER_SHUTDOWN_POLL_INTERVAL_MS);
+      elapsed += this.config.WORKER_SHUTDOWN_POLL_INTERVAL_MS;
+    }
+  }
+
+  private async claimAndDeliver(): Promise<void> {
+    const deliveries = await this.queue.claim(this.config.WORKER_BATCH_SIZE);
     if (!deliveries.length) return;
 
     await Promise.all(
@@ -35,36 +67,36 @@ export class DeliveryService {
     );
   }
 
-  private async deliver(delivery: QueuedEvent): Promise<void> {
+  private async deliver(delivery: ClaimedEvent): Promise<void> {
     this.activeDeliveries++;
     const startTime = Date.now();
     let consumer: Consumer | null = null;
 
     try {
-      const event = await this.deps.events.findById(delivery.eventId);
+      const event = await this.events.findById(delivery.eventId);
       if (!event) return;
 
-      consumer = await this.deps.consumers.findById(delivery.consumerId);
+      consumer = await this.consumers.findById(delivery.consumerId);
       if (!consumer) {
-        await this.deps.queue.moveToDeadLetter(delivery.id, 'consumer_deleted');
+        await this.queue.moveToDeadLetter(delivery.id, 'consumer_deleted');
         return;
       }
 
       if (consumer.status === 'paused') {
-        await this.deps.queue.releaseToPending(delivery.id);
+        await this.queue.releaseToPending(delivery.id);
         return;
       }
 
       if (consumer.type === 'pull' || consumer.url == null) {
-        await this.deps.queue.releaseToPending(delivery.id);
+        await this.queue.releaseToPending(delivery.id);
         return;
       }
 
-      const topic = await this.deps.topics.findById(consumer.topicId);
+      const topic = await this.topics.findById(consumer.topicId);
 
       if (!this.checksumMatches(event)) {
-        await this.deps.queue.moveToDeadLetter(delivery.id, 'payload_integrity_check_failed');
-        this.deps.logger.logEventMovedToDeadLetter(
+        await this.queue.moveToDeadLetter(delivery.id, 'payload_integrity_check_failed');
+        this.logger.logEventMovedToDeadLetter(
           delivery.eventId,
           delivery.consumerId,
           'payload_integrity_check_failed',
@@ -75,7 +107,7 @@ export class DeliveryService {
       const controller = new AbortController();
       const timeoutId = setTimeout(
         () => controller.abort(),
-        this.deps.config.deliveryTimeoutMs,
+        this.config.WORKER_DELIVERY_TIMEOUT_MS,
       );
 
       try {
@@ -93,7 +125,7 @@ export class DeliveryService {
 
     } catch (error) {
       const reason = error instanceof Error ? error.message : 'unknown error';
-      this.deps.logger.logDeliveryFailed(
+      this.logger.logDeliveryFailed(
         delivery.eventId,
         delivery.consumerId,
         reason,
@@ -107,38 +139,39 @@ export class DeliveryService {
 
   private async handleResponse(
     response: Response,
-    delivery: QueuedEvent,
+    delivery: ClaimedEvent,
     consumer: Consumer,
     startTime: number,
   ): Promise<void> {
     const rawBody = await response.text();
-    const responseBody = rawBody.substring(0, this.deps.config.maxResponseBodyBytes);
+    const responseBody = rawBody.substring(0, this.config.WORKER_MAX_RESPONSE_BODY_BYTES);
 
     if (response.status === 202) {
-      await this.deps.queue.markAwaitingAck(delivery.id);
+      await this.queue.markAwaitingAck(delivery.id);
       return;
     }
 
     if (response.ok) {
       const durationMs = Date.now() - startTime;
-      await this.deps.queue.acknowledge(delivery.id);
+      await this.queue.acknowledge(delivery.id, response.status, responseBody);
       this.metrics.recordSuccess(delivery.tenantId, durationMs);
-      this.deps.logger.logDeliverySucceeded(delivery.eventId, consumer.id, durationMs);
+      this.logger.logDeliverySucceeded(delivery.eventId, consumer.id, durationMs);
       return;
     }
 
     if (response.status >= 400 && response.status < 500) {
       const reason = `HTTP ${response.status}: ${responseBody}`;
-      await this.deps.queue.moveToDeadLetter(delivery.id, reason);
-      this.deps.logger.logEventMovedToDeadLetter(delivery.eventId, consumer.id, reason);
+      await this.queue.moveToDeadLetter(delivery.id, reason, response.status, responseBody);
+      this.metrics.recordFailure(delivery.tenantId);
+      this.logger.logEventMovedToDeadLetter(delivery.eventId, consumer.id, reason);
       return;
     }
 
-    await this.retry.scheduleRetryOrDeadLetter(delivery, `HTTP ${response.status}: ${responseBody}`);
+    await this.retry.scheduleRetryOrDeadLetter(delivery, `HTTP ${response.status}: ${responseBody}`, response.status, responseBody);
   }
 
   private buildDeliveryHeaders(
-    delivery: QueuedEvent,
+    delivery: ClaimedEvent,
     event: Event,
     consumer: Consumer,
     topic: Topic | null,
@@ -150,12 +183,12 @@ export class DeliveryService {
       .digest('hex');
 
     return {
-      'Content-Type':                  'application/json',
-      [DELIVERY_HEADERS.EVENT_ID]:     event.id,
-      [DELIVERY_HEADERS.TOPIC]:        topic?.name ?? event.topicId,
-      [DELIVERY_HEADERS.SIGNATURE]:    `sha256=${signature}`,
-      [DELIVERY_HEADERS.TIMESTAMP]:    timestamp,
-      [DELIVERY_HEADERS.ATTEMPT]:      String(delivery.attempt),
+      'Content-Type':               'application/json',
+      [DELIVERY_HEADERS.EVENT_ID]:  event.id,
+      [DELIVERY_HEADERS.TOPIC]:     topic?.name ?? event.topicId,
+      [DELIVERY_HEADERS.SIGNATURE]: `sha256=${signature}`,
+      [DELIVERY_HEADERS.TIMESTAMP]: timestamp,
+      [DELIVERY_HEADERS.ATTEMPT]:   String(delivery.attempt),
     };
   }
 

@@ -1,61 +1,28 @@
 import type { FastifyInstance } from 'fastify';
 
-import {
-  ProduceEventSchema,
-  ListEventsSchema,
-  AcknowledgeEventSchema,
-  ProduceEventResponseSchema,
-  GetEventDetailResponseSchema,
-  ListEventsResponseSchema,
-  ConsumedEventsResponseSchema,
-} from '@application/validators/event-validators.js';
-import { ConsumeEventsQuerySchema } from '@application/validators/tenant-validators.js';
-import { ProduceEventResponse } from '@application/responses/events/produce-event.response.js';
-import { ConsumedEventResponse } from '@application/responses/events/consumed-event.response.js';
-import { EventSummaryResponse } from '@application/responses/events/event-summary.response.js';
-import { GetEventDetailResponse } from '@application/responses/events/get-event-detail.response.js';
+import { ProduceEventSchema, AcknowledgeEventSchema } from '@application/validators/event-validators.js';
+import { ConsumeEventsQuerySchema }  from '@application/validators/tenant-validators.js';
+import { ProduceEventResponse }      from '@application/responses/events/produce-event.response.js';
+import { ConsumedEventResponse }     from '@application/responses/events/consumed-event.response.js';
+import { EventSummaryResponse }      from '@application/responses/events/event-summary.response.js';
+import { GetEventDetailResponse }    from '@application/responses/events/get-event-detail.response.js';
 
 import { apiKeyMiddleware } from '@api/middleware/api-key-middleware.js';
 import { jwtMiddleware }    from '@api/middleware/jwt-middleware.js';
-import { zodToJsonSchema, ErrorResponseSchema } from '@api/schemas/api-schemas.js';
+import { eventSchemas, ListEventsSchema } from './events.schemas.js';
+import { HTTP_STATUS }      from '@api/constants/http.constants.js';
 
 export async function eventsRoutes(app: FastifyInstance): Promise<void> {
-  app.post('/', {
-    schema: {
-      tags:        ['Events'],
-      summary:     'Produce an event',
-      security:    [{ apiKey: [] }],
-      body:        zodToJsonSchema(ProduceEventSchema),
-      response: {
-        201: zodToJsonSchema(ProduceEventResponseSchema),
-        400: ErrorResponseSchema,
-        401: ErrorResponseSchema,
-        500: ErrorResponseSchema,
-      },
-    },
-    preHandler: [apiKeyMiddleware],
-  }, async (request, reply) => {
+  app.post('/', { schema: eventSchemas.produce, preHandler: [apiKeyMiddleware] }, async (request, reply) => {
     const body  = ProduceEventSchema.parse(request.body);
     const event = await app.services.events.produce({
       ...body,
       tenantId: request.tenantId!,
     });
-    reply.code(201).send(ProduceEventResponse.mapFromEntity(event));
+    reply.code(HTTP_STATUS.CREATED).send(ProduceEventResponse.mapFromEntity(event));
   });
 
-  app.get('/', {
-    schema: {
-      tags:        ['Events'],
-      summary:     'List events',
-      querystring: zodToJsonSchema(ListEventsSchema),
-      response: {
-        200: zodToJsonSchema(ListEventsResponseSchema),
-        401: ErrorResponseSchema,
-        500: ErrorResponseSchema,
-      },
-    },
-    preHandler: [jwtMiddleware],
-  }, async (request, reply) => {
+  app.get('/', { schema: eventSchemas.list, preHandler: [jwtMiddleware] }, async (request, reply) => {
     const query  = ListEventsSchema.parse(request.query);
     const result = await app.services.events.list({
       ...query,
@@ -64,20 +31,7 @@ export async function eventsRoutes(app: FastifyInstance): Promise<void> {
     reply.send({ ...result, items: result.items.map(EventSummaryResponse.mapFromEntity) });
   });
 
-  app.get('/consume', {
-    schema: {
-      tags:        ['Events'],
-      summary:     'Claim pending events for a consumer (pull delivery)',
-      querystring: zodToJsonSchema(ConsumeEventsQuerySchema),
-      response: {
-        200: zodToJsonSchema(ConsumedEventsResponseSchema),
-        400: ErrorResponseSchema,
-        401: ErrorResponseSchema,
-        500: ErrorResponseSchema,
-      },
-    },
-    preHandler: [jwtMiddleware],
-  }, async (request, reply) => {
+  app.get('/consume', { schema: eventSchemas.consume, preHandler: [jwtMiddleware] }, async (request, reply) => {
     const query  = ConsumeEventsQuerySchema.parse(request.query);
     const events = await app.services.consumers.consume(
       query.consumerId,
@@ -87,46 +41,17 @@ export async function eventsRoutes(app: FastifyInstance): Promise<void> {
     reply.send({ items: events.map(ConsumedEventResponse.mapFromEntity), count: events.length });
   });
 
-  app.post('/:id/acknowledge', {
-    schema: {
-      tags:    ['Events'],
-      summary: 'Acknowledge event delivery',
-      security: [{ apiKey: [] }],
-      params:  { type: 'object', properties: { id: { type: 'string', format: 'uuid' } }, required: ['id'] },
-      body:    zodToJsonSchema(AcknowledgeEventSchema),
-      response: {
-        204: { type: 'null', description: 'Acknowledged' },
-        400: ErrorResponseSchema,
-        401: ErrorResponseSchema,
-        404: ErrorResponseSchema,
-        500: ErrorResponseSchema,
-      },
-    },
-    preHandler: [apiKeyMiddleware],
-  }, async (request, reply) => {
+  app.post('/:id/acknowledge', { schema: eventSchemas.acknowledge, preHandler: [apiKeyMiddleware] }, async (request, reply) => {
     const { id } = request.params as { id: string };
     const body   = AcknowledgeEventSchema.parse(request.body);
     await app.services.consumers.acknowledge(id, {
       ...body,
       tenantId: request.tenantId!,
     });
-    reply.code(204).send();
+    reply.code(HTTP_STATUS.NO_CONTENT).send();
   });
 
-  app.get('/:id', {
-    schema: {
-      tags:    ['Events'],
-      summary: 'Get event detail',
-      params:  { type: 'object', properties: { id: { type: 'string', format: 'uuid' } }, required: ['id'] },
-      response: {
-        200: zodToJsonSchema(GetEventDetailResponseSchema),
-        401: ErrorResponseSchema,
-        404: ErrorResponseSchema,
-        500: ErrorResponseSchema,
-      },
-    },
-    preHandler: [jwtMiddleware],
-  }, async (request, reply) => {
+  app.get('/:id', { schema: eventSchemas.getById, preHandler: [jwtMiddleware] }, async (request, reply) => {
     const { id } = request.params as { id: string };
     const event  = await app.services.events.getById(id, request.tenantId!);
     reply.send(GetEventDetailResponse.mapFromEntity(event));

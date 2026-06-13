@@ -1,5 +1,5 @@
 import { config } from 'dotenv';
-config({ path: '.env.local' });
+config({ path: '.env' });
 
 const { connectDatabase, runMigrations } = await import('@persistence/database.js');
 const { databaseConfig } = await import('./config/database.config.js');

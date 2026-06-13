@@ -22,6 +22,62 @@
       "when": 1780786931112,
       "tag": "0002_sloppy_karnak",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1780786931113,
+      "tag": "0003_rename_timeout_seconds_to_ms",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1780786931114,
+      "tag": "0004_rename_consumer_config_fields_to_ms",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1780786931115,
+      "tag": "0005_drop_consumer_config_add_alert_columns",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1780786931116,
+      "tag": "0006_nullable_user_tenant_id",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1780786931117,
+      "tag": "0007_drop_alert_columns",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1780786931118,
+      "tag": "0008_unique_idempotency_key",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1780786931119,
+      "tag": "0009_rename_source_sdk_to_api",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1780786931120,
+      "tag": "0010_rename_max_payload_kb_to_bytes",
+      "breakpoints": true
     }
   ]
 }

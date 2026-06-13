@@ -9,7 +9,7 @@ export const events = pgTable('events', {
   topicId:        uuid('topic_id').notNull().references(() => topics.id, { onDelete: 'cascade' }),
   payload:        jsonb('payload').notNull(),
   status:         varchar('status', { length: 20 }).notNull().default('pending'),
-  source:         varchar('source', { length: 20 }).notNull().default('sdk'),
+  source:         varchar('source', { length: 20 }).notNull().default('api'),
   idempotencyKey: varchar('idempotency_key', { length: 255 }),
   checksum:       varchar('checksum', { length: 64 }).notNull(),
   scheduledAt:    timestamp('scheduled_at', { withTimezone: true }).notNull().defaultNow(),

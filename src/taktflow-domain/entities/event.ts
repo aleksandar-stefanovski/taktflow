@@ -2,7 +2,7 @@ import { EntityBase } from './entity-base.js';
 import { EntityKey } from './entity-key.js';
 
 export type EventStatus = 'pending' | 'processing' | 'delivered' | 'failed';
-export type EventSource = 'sdk' | 'scheduler' | 'manual';
+export type EventSource = 'api';
 
 export class Event extends EntityBase {
   readonly topicId:       string;
@@ -33,7 +33,7 @@ export class Event extends EntityBase {
     this.topicId        = props.topicId;
     this.payload        = props.payload;
     this.checksum       = props.checksum;
-    this.source         = props.source ?? 'sdk';
+    this.source         = props.source ?? 'api';
     this.idempotencyKey = props.idempotencyKey ?? null;
     this.status         = props.status ?? 'pending';
     this.scheduledAt    = props.scheduledAt ?? new Date();

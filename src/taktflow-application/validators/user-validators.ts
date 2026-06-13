@@ -17,15 +17,3 @@ export const ChangePasswordSchema = z.object({
   currentPassword: z.string().min(8),
   newPassword:     z.string().min(8),
 });
-
-export const UserResponseSchema = z.object({
-  id:        z.string().uuid(),
-  tenantId:  z.string().uuid().nullable(),
-  email:     z.string().email(),
-  firstName: z.string(),
-  lastName:  z.string(),
-  role:      z.string(),
-  lastLogin: z.string().datetime().nullable(),
-  createdAt: z.string().datetime(),
-  updatedAt: z.string().datetime(),
-});

@@ -1,18 +1,29 @@
-import type { LoginUserSummary } from '../../interfaces/login-user-summary.interface.js';
+import type { User } from '@domain/entities/user.js';
 
 export class LoginResponse {
   readonly accessToken:  string;
   readonly refreshToken: string;
-  readonly user:         LoginUserSummary;
+  readonly user: {
+    readonly id:        string;
+    readonly email:     string;
+    readonly firstName: string;
+    readonly lastName:  string;
+    readonly role:      string;
+  };
 
-  constructor(data: { accessToken: string; refreshToken: string; user: LoginUserSummary }) {
+  constructor(data: { accessToken: string; refreshToken: string; user: User }) {
     this.accessToken  = data.accessToken;
     this.refreshToken = data.refreshToken;
-    this.user         = data.user;
+    this.user = {
+      id:        data.user.id,
+      email:     data.user.email,
+      firstName: data.user.firstName,
+      lastName:  data.user.lastName,
+      role:      data.user.role,
+    };
   }
 
-  static mapFromEntity(data: { accessToken: string; refreshToken: string; user: LoginUserSummary }): LoginResponse {
+  static mapFromEntity(data: { accessToken: string; refreshToken: string; user: User }): LoginResponse {
     return new LoginResponse(data);
   }
 }
-

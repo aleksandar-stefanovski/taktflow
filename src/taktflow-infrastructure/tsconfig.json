@@ -13,6 +13,6 @@
     { "path": "../taktflow-domain" },
     { "path": "../taktflow-persistence" }
   ],
-  "include": ["auth", "context", "email", "interfaces", "persistence", "queue", "constants"],
+  "include": ["auth", "context", "email", "constants"],
   "exclude": ["node_modules", "dist"]
 }

@@ -5,11 +5,12 @@ import { ApiKey } from '@domain/entities/api-key.js';
 import { EntityKey } from '@domain/entities/entity-key.js';
 import { NotFoundException } from '@domain/exceptions/not-found-exception.js';
 
+import type { IApiKeyService }      from '../interfaces/api-key-service.interface.js';
 import type { CreateApiKeyRequest } from '../requests/api-keys/create-api-key.request.js';
 import type { PaginationQuery } from '../requests/pagination.request.js';
-import { PaginatedResult } from '../responses/paginated-result.js';
+import { PaginatedResponse } from '../responses/paginated-response.js';
 
-export class ApiKeyService {
+export class ApiKeyService implements IApiKeyService {
   constructor(
     private readonly apiKeys:       IApiKeyRepository,
     private readonly apiKeyPrefix:  string,
@@ -21,7 +22,7 @@ export class ApiKeyService {
     const keyPrefix = rawKey.substring(0, 16);
 
     const apiKey = new ApiKey({
-      key:         new EntityKey(request.tenantId),
+      key:         EntityKey.create(request.tenantId),
       name:        request.name,
       keyHash,
       keyPrefix,
@@ -38,7 +39,7 @@ export class ApiKeyService {
     return apiKey;
   }
 
-  async list(query: PaginationQuery & { tenantId: string }): Promise<PaginatedResult<ApiKey>> {
+  async list(query: PaginationQuery & { tenantId: string }): Promise<PaginatedResponse<ApiKey>> {
     const limit  = query.pageSize;
     const offset = (query.page - 1) * query.pageSize;
 
@@ -47,7 +48,7 @@ export class ApiKeyService {
       this.apiKeys.count(),
     ]);
 
-    return new PaginatedResult(items, totalCount, query.page, query.pageSize);
+    return new PaginatedResponse(items, totalCount, query.page, query.pageSize);
   }
 
   async delete(id: string, tenantId: string): Promise<void> {

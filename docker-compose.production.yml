@@ -1,0 +1,16 @@
+name: taktflow-production
+
+services:
+  api:
+    environment:
+      NODE_ENV: production
+      LOG_LEVEL: warn
+      STRICT_SECURITY: "true"
+      CORS_ALLOW_ALL_ORIGINS: "false"
+      ENABLE_SWAGGER_UI: "false"
+      DASHBOARD_URL: https://yourdomain.com
+
+  worker:
+    environment:
+      NODE_ENV: production
+      LOG_LEVEL: warn

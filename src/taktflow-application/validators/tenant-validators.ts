@@ -18,16 +18,7 @@ export const ConsumeEventsQuerySchema = z.object({
   limit:      z.coerce.number().int().min(1).max(100).default(10),
 });
 
-export const TenantResponseSchema = z.object({
-  id:        z.string().uuid(),
-  name:      z.string(),
-  plan:      z.string(),
-  createdAt: z.string().datetime(),
-  updatedAt: z.string().datetime(),
-});
-
-export const UsageResponseSchema = z.object({
-  count:      z.number().int(),
-  limit:      z.number().int(),
-  percentage: z.number(),
+export const ReactivateTenantSchema = z.object({
+  email:    z.string().email(),
+  password: z.string().min(1),
 });

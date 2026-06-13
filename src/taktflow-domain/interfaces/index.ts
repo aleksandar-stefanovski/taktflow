@@ -1,6 +1,5 @@
 export type { ICurrentTenantProvider }        from './current-tenant-provider.interface.js';
 export type { IEntityBaseReadonlyRepository } from './readonly/entity-base-readonly-repository.interface.js';
-export type { FailureAlertRow }               from './readonly/failure-alert-row.interface.js';
 export type { IConsumerReadRepository }       from './readonly/consumer-read-repository.interface.js';
 export type { ITopicReadRepository }          from './readonly/topic-read-repository.interface.js';
 export type { IApiKeyReadRepository }         from './readonly/api-key-read-repository.interface.js';
@@ -22,3 +21,4 @@ export type { IDeadLetterEventRepository }    from './dead-letter-event-reposito
 export type { IUserRepository }               from './user-repository.interface.js';
 export type { ITenantRootRepository }         from './tenant-root-repository.interface.js';
 export type { ITenantMetricsRepository }      from './tenant-metrics-repository.interface.js';
+export type { IEventQueueService }            from './event-queue-service.interface.js';

@@ -1,5 +1,5 @@
 export type TopicConfig = {
   retentionDays: number;
-  maxPayloadKb:  number;
+  maxPayloadBytes: number;
   ordering:      'fifo' | 'unordered';
 };

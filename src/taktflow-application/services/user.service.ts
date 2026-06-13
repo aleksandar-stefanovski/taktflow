@@ -6,9 +6,10 @@ import { NotFoundException } from '@domain/exceptions/not-found-exception.js';
 import { ConflictException } from '@domain/exceptions/conflict-exception.js';
 import { UnauthorizedException } from '@domain/exceptions/unauthorized-exception.js';
 
-import type { IPasswordService } from '../interfaces/password-service.interface.js';
+import type { IPasswordService } from '../contracts/password-service.interface.js';
+import type { IUserService }     from '../interfaces/user-service.interface.js';
 
-export class UserService {
+export class UserService implements IUserService {
   constructor(
     private readonly users:     IUserRepository,
     private readonly passwords: IPasswordService,
@@ -27,7 +28,7 @@ export class UserService {
 
     const passwordHash = await this.passwords.hash(request.password);
     const user = new User({
-      key:       new EntityKey(request.tenantId),
+      key:       EntityKey.create(request.tenantId),
       email:     request.email,
       passwordHash,
       firstName: request.firstName,
@@ -57,6 +58,12 @@ export class UserService {
       ...(request.firstName !== undefined && { firstName: request.firstName }),
       ...(request.lastName  !== undefined && { lastName:  request.lastName  }),
     });
+  }
+
+  async delete(userId: string, tenantId: string): Promise<void> {
+    const user = await this.users.findById(userId);
+    if (!user) throw new NotFoundException('User', userId);
+    await this.users.anonymize(userId);
   }
 
   async changePassword(request: {

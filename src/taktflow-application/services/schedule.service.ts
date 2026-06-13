@@ -4,11 +4,12 @@ import { Schedule } from '@domain/entities/schedule.js';
 import { EntityKey } from '@domain/entities/entity-key.js';
 import { NotFoundException } from '@domain/exceptions/not-found-exception.js';
 
+import type { IScheduleService }      from '../interfaces/schedule-service.interface.js';
 import type { CreateScheduleRequest } from '../requests/schedules/create-schedule.request.js';
 import type { PaginationQuery } from '../requests/pagination.request.js';
-import { PaginatedResult } from '../responses/paginated-result.js';
+import { PaginatedResponse } from '../responses/paginated-response.js';
 
-export class ScheduleService {
+export class ScheduleService implements IScheduleService {
   constructor(
     private readonly schedules: IScheduleRepository,
     private readonly topics:    ITopicRepository,
@@ -19,7 +20,7 @@ export class ScheduleService {
     if (!topic) throw new NotFoundException('Topic', request.topicId);
 
     const schedule = new Schedule({
-      key:         new EntityKey(request.tenantId),
+      key:         EntityKey.create(request.tenantId),
       topicId:     request.topicId,
       cron:        request.cron,
       payload:     request.payload,
@@ -29,7 +30,7 @@ export class ScheduleService {
     return this.schedules.create(schedule);
   }
 
-  async list(query: PaginationQuery & { tenantId: string }): Promise<PaginatedResult<Schedule>> {
+  async list(query: PaginationQuery & { tenantId: string }): Promise<PaginatedResponse<Schedule>> {
     const limit  = query.pageSize;
     const offset = (query.page - 1) * query.pageSize;
 
@@ -38,6 +39,6 @@ export class ScheduleService {
       this.schedules.count(),
     ]);
 
-    return new PaginatedResult(items, totalCount, query.page, query.pageSize);
+    return new PaginatedResponse(items, totalCount, query.page, query.pageSize);
   }
 }

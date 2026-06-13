@@ -8,7 +8,6 @@ export class ConsumerDetailResponse {
   readonly url:         string | null;
   readonly environment: string;
   readonly status:      ConsumerStatus;
-  readonly alertEmail:  string | null;
   readonly createdAt:   string;
   readonly updatedAt:   string;
 
@@ -20,7 +19,6 @@ export class ConsumerDetailResponse {
     this.url         = consumer.url;
     this.environment = consumer.environment;
     this.status      = consumer.status;
-    this.alertEmail  = consumer.alertEmail;
     this.createdAt   = consumer.createdAt.toISOString();
     this.updatedAt   = consumer.updatedAt.toISOString();
   }

@@ -6,16 +6,18 @@ import type { IConsumerRepository } from '@domain/interfaces/consumer-repository
 import { Event } from '@domain/entities/event.js';
 import { EntityKey } from '@domain/entities/entity-key.js';
 import { NotFoundException } from '@domain/exceptions/not-found-exception.js';
+import { PlanLimitException } from '@domain/exceptions/plan-limit-exception.js';
 
-import { canonicalJson } from '@application/helpers/canonical-json.helper.js';
+import { canonicalJson } from '@utils/canonical-json.helper.js';
 
-import type { IUsageService } from '../interfaces/usage-service.interface.js';
-import type { IEventQueueService } from '../interfaces/event-queue-service.interface.js';
+import type { IUsageService } from '@application/interfaces/usage-service.interface.js';
+import type { IEventQueueService } from '@domain/interfaces/event-queue-service.interface.js';
+import type { IEventService }      from '../interfaces/event-service.interface.js';
 import type { ProduceEventRequest } from '../requests/events/produce-event.request.js';
 import type { ListEventsQuery } from '../requests/events/list-events.request.js';
-import { PaginatedResult } from '../responses/paginated-result.js';
+import { PaginatedResponse } from '../responses/paginated-response.js';
 
-export class EventService {
+export class EventService implements IEventService {
   constructor(
     private readonly events:    IEventRepository,
     private readonly topics:    ITopicRepository,
@@ -30,6 +32,11 @@ export class EventService {
     const topic = await this.topics.findById(request.topicId);
     if (!topic) throw new NotFoundException('Topic', request.topicId);
 
+    const payloadBytes = Buffer.byteLength(JSON.stringify(request.payload));
+    if (payloadBytes > topic.config.maxPayloadBytes) {
+      throw new PlanLimitException('Payload size', topic.config.maxPayloadBytes);
+    }
+
     if (request.idempotencyKey) {
       const existing = await this.events.findByIdempotencyKey(request.idempotencyKey);
       if (existing) return existing;
@@ -40,11 +47,11 @@ export class EventService {
       .digest('hex');
 
     const event = new Event({
-      key:            new EntityKey(request.tenantId),
+      key:            EntityKey.create(request.tenantId),
       topicId:        topic.id,
       payload:        request.payload,
       checksum,
-      source:         'sdk',
+      source:         'api',
       idempotencyKey: request.idempotencyKey ?? null,
     });
 
@@ -79,7 +86,7 @@ export class EventService {
     return event;
   }
 
-  async list(query: ListEventsQuery & { tenantId: string }): Promise<PaginatedResult<Event>> {
+  async list(query: ListEventsQuery & { tenantId: string }): Promise<PaginatedResponse<Event>> {
     const limit  = query.pageSize;
     const offset = (query.page - 1) * query.pageSize;
 
@@ -93,6 +100,6 @@ export class EventService {
           this.events.count(),
         ]);
 
-    return new PaginatedResult(items, totalCount, query.page, query.pageSize);
+    return new PaginatedResponse(items, totalCount, query.page, query.pageSize);
   }
 }

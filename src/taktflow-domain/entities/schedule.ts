@@ -1,10 +1,10 @@
 import { EntityBase } from './entity-base.js';
 import { EntityKey } from './entity-key.js';
-import type { HasSoftDelete } from './has-soft-delete.interface.js';
+import type { HasDelete } from './has-delete.interface.js';
 
 export type ScheduleStatus = 'active' | 'paused';
 
-export class Schedule extends EntityBase implements HasSoftDelete {
+export class Schedule extends EntityBase implements HasDelete {
   readonly topicId:     string;
   readonly cron:        string;
   payload:              Record<string, unknown>;

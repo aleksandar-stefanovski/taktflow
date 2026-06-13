@@ -76,4 +76,20 @@ export class UserRepository
     if (!row) throw new Error('Update returned no rows');
     return UserReadonlyRepository.toDomain(row);
   }
+
+  async anonymize(id: string): Promise<void> {
+    await this.db
+      .update(users)
+      .set({
+        email:              `deleted_${id}@deleted.invalid`,
+        firstName:          'Deleted',
+        lastName:           'User',
+        passwordHash:       `redacted_${id}`,
+        refreshToken:       null,
+        refreshTokenExpiry: null,
+        deletedAt:          new Date(),
+        updatedAt:          new Date(),
+      })
+      .where(and(eq(users.id, id), eq(users.tenantId, this.tenantId)));
+  }
 }

@@ -5,12 +5,13 @@ import type { TopicConfig } from '@domain/value-objects/topic-config.js';
 import { NotFoundException } from '@domain/exceptions/not-found-exception.js';
 import { ConflictException } from '@domain/exceptions/conflict-exception.js';
 
+import type { ITopicService }      from '../interfaces/topic-service.interface.js';
 import type { CreateTopicRequest } from '../requests/topics/create-topic.request.js';
 import type { UpdateTopicRequest } from '../requests/topics/update-topic.request.js';
 import type { PaginationQuery } from '../requests/pagination.request.js';
-import { PaginatedResult } from '../responses/paginated-result.js';
+import { PaginatedResponse } from '../responses/paginated-response.js';
 
-export class TopicService {
+export class TopicService implements ITopicService {
   constructor(
     private readonly topics: ITopicRepository,
     private readonly defaultTopicConfig: TopicConfig,
@@ -21,7 +22,7 @@ export class TopicService {
     if (existing) throw new ConflictException(`Topic '${request.name}' already exists`);
 
     const topic = new Topic({
-      key:      new EntityKey(request.tenantId),
+      key:      EntityKey.create(request.tenantId),
       name:     request.name,
       config:   { ...this.defaultTopicConfig, ...request.config },
     });
@@ -60,7 +61,7 @@ export class TopicService {
     await this.topics.delete(id);
   }
 
-  async list(query: PaginationQuery & { tenantId: string }): Promise<PaginatedResult<Topic>> {
+  async list(query: PaginationQuery & { tenantId: string }): Promise<PaginatedResponse<Topic>> {
     const limit  = query.pageSize;
     const offset = (query.page - 1) * query.pageSize;
 
@@ -69,6 +70,6 @@ export class TopicService {
       this.topics.count(),
     ]);
 
-    return new PaginatedResult(items, totalCount, query.page, query.pageSize);
+    return new PaginatedResponse(items, totalCount, query.page, query.pageSize);
   }
 }

@@ -1,10 +1,10 @@
 import { EntityBase } from './entity-base.js';
 import { EntityKey } from './entity-key.js';
-import type { HasSoftDelete } from './has-soft-delete.interface.js';
+import type { HasDelete } from './has-delete.interface.js';
 
 export type PlanTier = 'starter' | 'growth' | 'business' | 'enterprise';
 
-export class Tenant extends EntityBase implements HasSoftDelete {
+export class Tenant extends EntityBase implements HasDelete {
   readonly name: string;
   plan:          PlanTier;
   deletedAt:     Date | null = null;

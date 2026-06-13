@@ -60,15 +60,49 @@ export class TenantMetricsRepository implements ITenantMetricsRepository {
 
   async incrementSuccessBatch(tenantId: string, successCount: number, totalProcessingMs: number): Promise<void> {
     await this.db
-      .update(projectMetrics)
-      .set({
-        successCount:      sql`${projectMetrics.successCount} + ${successCount}`,
-        eventsToday:       sql`${projectMetrics.eventsToday} + ${successCount}`,
-        eventsTotal:       sql`${projectMetrics.eventsTotal} + ${successCount}`,
-        totalProcessingMs: sql`${projectMetrics.totalProcessingMs} + ${totalProcessingMs}`,
+      .insert(projectMetrics)
+      .values({
+        tenantId,
+        eventsToday:       successCount,
+        eventsTotal:       successCount,
+        successCount:      successCount,
+        failureCount:      0,
+        totalProcessingMs,
         updatedAt:         new Date(),
       })
-      .where(eq(projectMetrics.tenantId, tenantId));
+      .onConflictDoUpdate({
+        target: projectMetrics.tenantId,
+        set: {
+          successCount:      sql`${projectMetrics.successCount} + ${successCount}`,
+          eventsToday:       sql`${projectMetrics.eventsToday} + ${successCount}`,
+          eventsTotal:       sql`${projectMetrics.eventsTotal} + ${successCount}`,
+          totalProcessingMs: sql`${projectMetrics.totalProcessingMs} + ${totalProcessingMs}`,
+          updatedAt:         new Date(),
+        },
+      });
+  }
+
+  async incrementFailureBatch(tenantId: string, failureCount: number): Promise<void> {
+    await this.db
+      .insert(projectMetrics)
+      .values({
+        tenantId,
+        eventsToday:       failureCount,
+        eventsTotal:       failureCount,
+        successCount:      0,
+        failureCount:      failureCount,
+        totalProcessingMs: 0,
+        updatedAt:         new Date(),
+      })
+      .onConflictDoUpdate({
+        target: projectMetrics.tenantId,
+        set: {
+          failureCount: sql`${projectMetrics.failureCount} + ${failureCount}`,
+          eventsToday:  sql`${projectMetrics.eventsToday} + ${failureCount}`,
+          eventsTotal:  sql`${projectMetrics.eventsTotal} + ${failureCount}`,
+          updatedAt:    new Date(),
+        },
+      });
   }
 
   async incrementFailure(tenantId: string): Promise<void> {

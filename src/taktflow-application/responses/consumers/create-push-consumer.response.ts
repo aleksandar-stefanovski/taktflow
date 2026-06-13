@@ -8,7 +8,6 @@ export class CreatePushConsumerResponse {
   readonly url:         string;
   readonly environment: string;
   readonly status:      ConsumerStatus;
-  readonly alertEmail:  string | null;
   readonly createdAt:   string;
 
   constructor(consumer: Consumer) {
@@ -19,7 +18,6 @@ export class CreatePushConsumerResponse {
     this.url         = consumer.url!;
     this.environment = consumer.environment;
     this.status      = consumer.status;
-    this.alertEmail  = consumer.alertEmail;
     this.createdAt   = consumer.createdAt.toISOString();
   }
 

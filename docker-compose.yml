@@ -33,14 +33,22 @@ services:
       API_KEY_SIGNING_SECRET: local-signing-secret-min-32-characters-long
       DASHBOARD_URL: http://localhost:5173
       LOG_LEVEL: debug
+      STRICT_SECURITY: "false"
+      CORS_ALLOW_ALL_ORIGINS: "true"
+      ENABLE_SWAGGER_UI: "true"
+      COMPRESS_THRESHOLD_BYTES: "1024"
+      TENANT_DELETION_GRACE_PERIOD_DAYS: "30"
       WORKER_BATCH_SIZE: "50"
       WORKER_POLL_INTERVAL_MS: "100"
       WORKER_DELIVERY_TIMEOUT_MS: "30000"
-      RESEND_API_KEY: re_local_placeholder
     volumes:
       - ./src:/app/src
-      - ./packages:/app/packages
       - /app/node_modules
+      - /app/src/taktflow-abstractions/node_modules
+      - /app/src/taktflow-application/node_modules
+      - /app/src/taktflow-domain/node_modules
+      - /app/src/taktflow-infrastructure/node_modules
+      - /app/src/taktflow-persistence/node_modules
       - /app/src/taktflow-api/node_modules
     depends_on:
       postgres:
@@ -59,11 +67,14 @@ services:
       WORKER_BATCH_SIZE: "50"
       WORKER_POLL_INTERVAL_MS: "100"
       WORKER_DELIVERY_TIMEOUT_MS: "30000"
-      RESEND_API_KEY: re_local_placeholder
     volumes:
       - ./src:/app/src
-      - ./packages:/app/packages
       - /app/node_modules
+      - /app/src/taktflow-abstractions/node_modules
+      - /app/src/taktflow-application/node_modules
+      - /app/src/taktflow-domain/node_modules
+      - /app/src/taktflow-infrastructure/node_modules
+      - /app/src/taktflow-persistence/node_modules
       - /app/src/taktflow-worker/node_modules
     depends_on:
       postgres:

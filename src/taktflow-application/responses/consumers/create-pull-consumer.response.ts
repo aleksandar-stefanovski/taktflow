@@ -7,7 +7,6 @@ export class CreatePullConsumerResponse {
   readonly type:        'pull';
   readonly environment: string;
   readonly status:      ConsumerStatus;
-  readonly alertEmail:  string | null;
   readonly createdAt:   string;
 
   constructor(consumer: Consumer) {
@@ -17,7 +16,6 @@ export class CreatePullConsumerResponse {
     this.type        = 'pull';
     this.environment = consumer.environment;
     this.status      = consumer.status;
-    this.alertEmail  = consumer.alertEmail;
     this.createdAt   = consumer.createdAt.toISOString();
   }
 

@@ -31,7 +31,7 @@ export class TopicReadonlyRepository extends EntityBaseReadonlyRepository<Topic>
 
   static toDomain(row: TopicRow): Topic {
     const entity = new Topic({
-      key:       new EntityKey(row.id, row.tenantId),
+      key:       EntityKey.reconstitute(row.id, row.tenantId),
       name:      row.name,
       config:    row.config as TopicConfig,
       createdAt: row.createdAt,

@@ -1,23 +1,23 @@
-import type { ApiKeyService } from '@application/services/api-key.service.js';
-import type { AuthService } from '@application/services/auth.service.js';
-import type { ConsumerService } from '@application/services/consumer.service.js';
-import type { DeadLetterService } from '@application/services/dead-letter.service.js';
-import type { EventService } from '@application/services/event.service.js';
-import type { DashboardService } from '@application/services/dashboard.service.js';
-import type { ScheduleService } from '@application/services/schedule.service.js';
-import type { TenantService } from '@application/services/tenant.service.js';
-import type { TopicService } from '@application/services/topic.service.js';
-import type { UserService } from '@application/services/user.service.js';
+import type { IAuthService }       from '@application/interfaces/auth-service.interface.js';
+import type { IApiKeyService }     from '@application/interfaces/api-key-service.interface.js';
+import type { IConsumerService }   from '@application/interfaces/consumer-service.interface.js';
+import type { IDashboardService }  from '@application/interfaces/dashboard-service.interface.js';
+import type { IDeadLetterService } from '@application/interfaces/dead-letter-service.interface.js';
+import type { IEventService }      from '@application/interfaces/event-service.interface.js';
+import type { IScheduleService }   from '@application/interfaces/schedule-service.interface.js';
+import type { ITenantService }     from '@application/interfaces/tenant-service.interface.js';
+import type { ITopicService }      from '@application/interfaces/topic-service.interface.js';
+import type { IUserService }       from '@application/interfaces/user-service.interface.js';
 
 export interface ApplicationDomainServices {
-  apiKey:     ApiKeyService;
-  auth:       AuthService;
-  consumers:  ConsumerService;
-  deadLetter: DeadLetterService;
-  events:     EventService;
-  dashboard:  DashboardService;
-  schedules:  ScheduleService;
-  tenants:    TenantService;
-  topics:     TopicService;
-  users:      UserService;
+  apiKey:     IApiKeyService;
+  auth:       IAuthService;
+  consumers:  IConsumerService;
+  deadLetter: IDeadLetterService;
+  events:     IEventService;
+  dashboard:  IDashboardService;
+  schedules:  IScheduleService;
+  tenants:    ITenantService;
+  topics:     ITopicService;
+  users:      IUserService;
 }

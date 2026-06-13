@@ -1,18 +1,18 @@
 import { config } from 'dotenv';
 config({ path: '.env.local' });
 
-const { connectDatabase }     = await import('@persistence/database.js');
-const { databaseConfig }      = await import('./config/database.config.js');
-const { buildWorkerEngine }   = await import('./extensions/service-collection.extension.js');
+const { connectDatabase } = await import('@persistence/database.js');
+const { databaseConfig }  = await import('./config/database.config.js');
+const { WorkerFactory }   = await import('./worker-factory.js');
 
 async function bootstrap(): Promise<void> {
   const db     = await connectDatabase(databaseConfig);
-  const engine = buildWorkerEngine(db);
+  const worker = new WorkerFactory(db).create();
 
-  engine.start();
+  worker.start();
 
   const shutdown = async (): Promise<void> => {
-    await engine.stop();
+    await worker.stop();
     process.exit(0);
   };
 

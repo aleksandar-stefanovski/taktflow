@@ -5,19 +5,20 @@ import type { IConsumerRepository } from '@domain/interfaces/consumer-repository
 import { NotFoundException } from '@domain/exceptions/not-found-exception.js';
 import { ConflictException } from '@domain/exceptions/conflict-exception.js';
 
-import type { IEventQueueService } from '../interfaces/event-queue-service.interface.js';
+import type { IEventQueueService }  from '@domain/interfaces/event-queue-service.interface.js';
+import type { IDeadLetterService }  from '../interfaces/dead-letter-service.interface.js';
 import type { ListDeadLetterEventsQuery } from '../requests/dead-letter/list-dead-letter-events.request.js';
-import { PaginatedResult } from '../responses/paginated-result.js';
+import { PaginatedResponse } from '../responses/paginated-response.js';
 import type { DeadLetterEvent } from '@domain/entities/dead-letter-event.js';
 
-export class DeadLetterService {
+export class DeadLetterService implements IDeadLetterService {
   constructor(
     private readonly dlq:       IDeadLetterEventRepository,
     private readonly consumers: IConsumerRepository,
     private readonly queue:     IEventQueueService,
   ) {}
 
-  async list(query: ListDeadLetterEventsQuery): Promise<PaginatedResult<DeadLetterEvent>> {
+  async list(query: ListDeadLetterEventsQuery): Promise<PaginatedResponse<DeadLetterEvent>> {
     const limit  = query.pageSize;
     const offset = (query.page - 1) * query.pageSize;
 
@@ -26,7 +27,7 @@ export class DeadLetterService {
       this.dlq.count(),
     ]);
 
-    return new PaginatedResult(items, totalCount, query.page, query.pageSize);
+    return new PaginatedResponse(items, totalCount, query.page, query.pageSize);
   }
 
   async replay(id: string, tenantId: string): Promise<void> {

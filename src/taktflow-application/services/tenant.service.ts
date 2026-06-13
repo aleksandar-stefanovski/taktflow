@@ -2,10 +2,10 @@ import type { ITenantRootRepository } from '@domain/interfaces/tenant-root-repos
 import type { Tenant } from '@domain/entities/tenant.js';
 import { NotFoundException } from '@domain/exceptions/not-found-exception.js';
 
-import type { IUsageService } from '../interfaces/usage-service.interface.js';
-import type { IUsageResult } from '../interfaces/usage-result.interface.js';
+import type { IUsageService }   from '@application/interfaces/usage-service.interface.js';
+import type { ITenantService }  from '../interfaces/tenant-service.interface.js';
 
-export class TenantService {
+export class TenantService implements ITenantService {
   constructor(
     private readonly tenants: ITenantRootRepository,
     private readonly usage:   IUsageService,
@@ -23,13 +23,18 @@ export class TenantService {
     return this.tenants.update(command.tenantId, { name: command.name });
   }
 
-  async getUsage(tenantId: string): Promise<IUsageResult> {
+  async delete(tenantId: string): Promise<void> {
+    const tenant = await this.tenants.findById(tenantId);
+    if (!tenant) throw new NotFoundException('Tenant', tenantId);
+    await this.tenants.softDelete(tenantId);
+  }
+
+  async getUsage(tenantId: string): Promise<{ count: number; limit: number }> {
     const [count, limit] = await Promise.all([
       this.usage.getMonthlyCount(tenantId),
       this.usage.getPlanLimit(tenantId),
     ]);
 
-    const percentage = limit > 0 ? Math.round((count / limit) * 100) : 0;
-    return { count, limit, percentage };
+    return { count, limit };
   }
 }

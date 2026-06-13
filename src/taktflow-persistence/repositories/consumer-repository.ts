@@ -1,4 +1,5 @@
 import { and, count, eq, isNull } from 'drizzle-orm';
+import { firstCount } from '../query.helper.js';
 
 import type { DrizzleDb } from '../database.js';
 import { consumers } from '../schema/consumers.js';
@@ -46,7 +47,7 @@ export class ConsumerRepository
         isNull(consumers.deletedAt),
       ));
 
-    return result[0]?.total ?? 0;
+    return firstCount(result);
   }
 
   async create(entity: Consumer): Promise<Consumer> {
@@ -61,9 +62,7 @@ export class ConsumerRepository
         url:                entity.url,
         secret:             entity.secret,
         environment:        entity.environment,
-        status:             entity.status,
-        alertEmail:         entity.alertEmail,
-        alertAfterFailures: entity.alertAfterFailures,
+        status:    entity.status,
         createdAt:          entity.createdAt,
         updatedAt:          entity.updatedAt,
       })
@@ -81,7 +80,6 @@ export class ConsumerRepository
         ...(updates.name !== undefined && { name: updates.name }),
         ...(updates.url !== undefined && { url: updates.url }),
         ...(updates.status !== undefined && { status: updates.status }),
-        ...(updates.alertEmail !== undefined && { alertEmail: updates.alertEmail }),
         updatedAt: new Date(),
       })
       .where(and(eq(consumers.id, id), eq(consumers.tenantId, this.tenantId)))

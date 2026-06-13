@@ -4,15 +4,16 @@ export class EntityKey {
   readonly id:       string;
   readonly tenantId: string | null;
 
-  constructor(id: string, tenantId: string | null);
-  constructor(tenantId: string | null);
-  constructor(idOrTenantId: string | null, tenantId?: string | null) {
-    if (tenantId !== undefined) {
-      this.id       = idOrTenantId as string;
-      this.tenantId = tenantId;
-    } else {
-      this.id       = randomUUID();
-      this.tenantId = idOrTenantId;
-    }
+  private constructor(id: string, tenantId: string | null) {
+    this.id       = id;
+    this.tenantId = tenantId;
+  }
+
+  static create(tenantId: string | null): EntityKey {
+    return new EntityKey(randomUUID(), tenantId);
+  }
+
+  static reconstitute(id: string, tenantId: string | null): EntityKey {
+    return new EntityKey(id, tenantId);
   }
 }

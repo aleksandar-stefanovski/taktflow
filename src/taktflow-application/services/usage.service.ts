@@ -1,15 +1,14 @@
-import type { IEventRepository } from '@domain/interfaces/event-repository.interface.js';
-import type { ITenantRootRepository } from '@domain/interfaces/tenant-root-repository.interface.js';
-import { PlanLimitException } from '@domain/exceptions/plan-limit-exception.js';
-import { NotFoundException } from '@domain/exceptions/not-found-exception.js';
-
-import type { IUsageService } from '../interfaces/usage-service.interface.js';
+import type { IEventRepository }      from '@domain/interfaces/event-repository.interface.js';
+import type { ITenantRootRepository }  from '@domain/interfaces/tenant-root-repository.interface.js';
+import { PlanLimitException }          from '@domain/exceptions/plan-limit-exception.js';
+import { NotFoundException }           from '@domain/exceptions/not-found-exception.js';
+import type { IUsageService }          from '@application/interfaces/usage-service.interface.js';
 
 export class UsageService implements IUsageService {
   constructor(
-    private readonly events:           IEventRepository,
-    private readonly tenants:          ITenantRootRepository,
-    private readonly planEventsLimit:  Record<string, number>,
+    private readonly events:          IEventRepository,
+    private readonly tenants:         ITenantRootRepository,
+    private readonly planEventsLimit: Record<string, number>,
   ) {}
 
   async getMonthlyCount(tenantId: string): Promise<number> {

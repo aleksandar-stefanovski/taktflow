@@ -8,14 +8,14 @@ import { HTTP_CONSTANTS } from '@api/constants/http.constants.js';
 
 export async function securityPlugin(app: FastifyInstance): Promise<void> {
   await app.register(helmet, {
-    contentSecurityPolicy:     serverConfig.NODE_ENV === 'production',
+    contentSecurityPolicy:     serverConfig.STRICT_SECURITY,
     crossOriginEmbedderPolicy: false,
-    crossOriginOpenerPolicy:   serverConfig.NODE_ENV === 'production' ? { policy: 'same-origin' } : false,
-    crossOriginResourcePolicy: serverConfig.NODE_ENV === 'production' ? { policy: 'same-site' } : false,
+    crossOriginOpenerPolicy:   serverConfig.STRICT_SECURITY ? { policy: 'same-origin' } : false,
+    crossOriginResourcePolicy: serverConfig.STRICT_SECURITY ? { policy: 'same-site' } : false,
     dnsPrefetchControl:        { allow: false },
     frameguard:                { action: 'deny' },
     hidePoweredBy:             true,
-    hsts:                      serverConfig.NODE_ENV === 'production' ? { maxAge: 31_536_000, includeSubDomains: true, preload: true } : false,
+    hsts:                      serverConfig.STRICT_SECURITY ? { maxAge: 31_536_000, includeSubDomains: true, preload: true } : false,
     ieNoOpen:                  true,
     noSniff:                   true,
     referrerPolicy:            { policy: ['strict-origin-when-cross-origin'] },
@@ -23,7 +23,7 @@ export async function securityPlugin(app: FastifyInstance): Promise<void> {
   });
 
   await app.register(cors, {
-    origin:         serverConfig.NODE_ENV === 'production' ? serverConfig.DASHBOARD_URL : true,
+    origin:         serverConfig.CORS_ALLOW_ALL_ORIGINS ? true : serverConfig.DASHBOARD_URL,
     credentials:    true,
     methods:        ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', HTTP_CONSTANTS.API_KEY_HEADER],

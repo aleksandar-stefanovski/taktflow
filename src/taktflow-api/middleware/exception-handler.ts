@@ -7,6 +7,7 @@ import { ValidationException } from '@domain/exceptions/validation-exception.js'
 export function registerExceptionHandler(app: FastifyInstance): void {
   app.setErrorHandler((error: FastifyError | Error, request, reply) => {
     if (error instanceof DomainException) {
+      request.log.warn({ err: error, code: error.code }, error.message);
       return reply.status(error.statusCode).send({
         success: false,
         error: {
@@ -18,6 +19,7 @@ export function registerExceptionHandler(app: FastifyInstance): void {
     }
 
     if (error instanceof ZodError) {
+      request.log.warn({ err: error }, 'Validation failed');
       return reply.status(400).send({
         success: false,
         error: {
@@ -29,6 +31,7 @@ export function registerExceptionHandler(app: FastifyInstance): void {
     }
 
     if ('statusCode' in error && typeof error.statusCode === 'number' && error.statusCode < 500) {
+      request.log.warn({ err: error }, error.message);
       return reply.status(error.statusCode).send({
         success: false,
         error: {
@@ -38,7 +41,7 @@ export function registerExceptionHandler(app: FastifyInstance): void {
       });
     }
 
-    request.log.error(error);
+    request.log.error({ err: error }, error.message);
     return reply.status(500).send({
       success: false,
       error: { code: 'INTERNAL_ERROR', message: 'Internal server error' },

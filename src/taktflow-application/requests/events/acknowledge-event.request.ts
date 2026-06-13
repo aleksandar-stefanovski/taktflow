@@ -1,5 +1,5 @@
 import type { z } from 'zod';
 
-import type { AcknowledgeEventSchema } from '../../validators/event-validators.js';
+import type { AcknowledgeEventSchema } from '@application/validators/event-validators.js';
 
 export type AcknowledgeEventRequest = z.infer<typeof AcknowledgeEventSchema>;

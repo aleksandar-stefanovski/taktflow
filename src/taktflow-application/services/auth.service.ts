@@ -4,36 +4,40 @@ import { Tenant } from '@domain/entities/tenant.js';
 import { User } from '@domain/entities/user.js';
 import { EntityKey } from '@domain/entities/entity-key.js';
 import { ConflictException } from '@domain/exceptions/conflict-exception.js';
+import { NotFoundException } from '@domain/exceptions/not-found-exception.js';
 import { UnauthorizedException } from '@domain/exceptions/unauthorized-exception.js';
+import { TenantDeletedException } from '@domain/exceptions/tenant-deleted-exception.js';
 
-import type { ITokenService } from '../interfaces/token-service.interface.js';
-import type { IPasswordService } from '../interfaces/password-service.interface.js';
-import type { LoginResult } from '../interfaces/login-result.interface.js';
-import type { TokenPair } from '../interfaces/token-pair.interface.js';
+import type { ITokenService }    from '../contracts/token-service.interface.js';
+import type { IPasswordService } from '../contracts/password-service.interface.js';
+import type { IAuthService }     from '../interfaces/auth-service.interface.js';
 import type { RegisterTenantRequest } from '../requests/tenants/register-tenant.request.js';
+import { LoginResponse } from '../responses/auth/login.response.js';
+import { RefreshTokenResponse } from '../responses/auth/refresh-token.response.js';
 
-export class AuthService {
+export class AuthService implements IAuthService {
   constructor(
     private readonly tenants:               ITenantRootRepository,
     private readonly users:                 IUserRootRepository,
     private readonly passwords:             IPasswordService,
     private readonly tokens:               ITokenService,
     private readonly refreshTokenExpiryMs:  number,
+    private readonly gracePeriodDays:       number,
   ) {}
 
-  async register(request: RegisterTenantRequest): Promise<LoginResult> {
+  async register(request: RegisterTenantRequest): Promise<LoginResponse> {
     const existing = await this.users.findByEmail(request.email);
     if (existing) throw new ConflictException(`Email ${request.email} is already registered`);
 
     const tenant = await this.tenants.create(new Tenant({
-      key:  new EntityKey(null),
+      key:  EntityKey.create(null),
       name: request.name,
       ...(request.plan !== undefined && { plan: request.plan }),
     }));
 
     const passwordHash = await this.passwords.hash(request.password);
     const user = await this.users.create(new User({
-      key:       new EntityKey(tenant.id),
+      key:       EntityKey.create(tenant.id),
       email:     request.email,
       passwordHash,
       firstName: request.firstName,
@@ -47,20 +51,10 @@ export class AuthService {
 
     await this.users.update(user.id, { refreshToken, refreshTokenExpiry });
 
-    return {
-      accessToken,
-      refreshToken,
-      user: {
-        id:        user.id,
-        email:     user.email,
-        firstName: user.firstName,
-        lastName:  user.lastName,
-        role:      user.role,
-      },
-    };
+    return LoginResponse.mapFromEntity({ accessToken, refreshToken, user });
   }
 
-  async login(request: { email: string; password: string }): Promise<LoginResult> {
+  async login(request: { email: string; password: string }): Promise<LoginResponse> {
     const user = await this.users.findByEmail(request.email);
     if (!user) throw new UnauthorizedException('Invalid credentials');
 
@@ -77,17 +71,7 @@ export class AuthService {
       lastLogin: new Date(),
     });
 
-    return {
-      accessToken,
-      refreshToken,
-      user: {
-        id:        user.id,
-        email:     user.email,
-        firstName: user.firstName,
-        lastName:  user.lastName,
-        role:      user.role,
-      },
-    };
+    return LoginResponse.mapFromEntity({ accessToken, refreshToken, user });
   }
 
   async logout(request: { userId: string; tenantId: string | null }): Promise<void> {
@@ -100,7 +84,38 @@ export class AuthService {
     });
   }
 
-  async refresh(request: { refreshToken: string }): Promise<TokenPair> {
+  async reactivateTenant(request: { email: string; password: string }): Promise<LoginResponse> {
+    const user = await this.users.findByEmail(request.email);
+    if (!user) throw new UnauthorizedException('Invalid credentials');
+
+    const isValid = await this.passwords.verify(user.passwordHash, request.password);
+    if (!isValid) throw new UnauthorizedException('Invalid credentials');
+
+    const tenantId = user.key.tenantId;
+    if (!tenantId) throw new UnauthorizedException('User has no associated tenant');
+
+    const tenant = await this.tenants.findByIdIncludingDeleted(tenantId);
+    if (!tenant) throw new NotFoundException('Tenant', tenantId);
+
+    if (tenant.deletedAt !== null) {
+      const gracePeriodMs = this.gracePeriodDays * 24 * 60 * 60 * 1000;
+      const expiresAt     = new Date(tenant.deletedAt.getTime() + gracePeriodMs);
+      if (new Date() > expiresAt) {
+        throw new TenantDeletedException('The reactivation window has expired. Your account data has been permanently deleted.');
+      }
+      await this.tenants.reactivate(tenantId);
+    }
+
+    const accessToken        = await this.tokens.signAccessToken({ sub: user.id, orgId: tenantId, role: user.role });
+    const refreshToken       = await this.tokens.signRefreshToken({ sub: user.id, orgId: tenantId, role: user.role });
+    const refreshTokenExpiry = new Date(Date.now() + this.refreshTokenExpiryMs);
+
+    await this.users.update(user.id, { refreshToken, refreshTokenExpiry, lastLogin: new Date() });
+
+    return LoginResponse.mapFromEntity({ accessToken, refreshToken, user });
+  }
+
+  async refresh(request: { refreshToken: string }): Promise<RefreshTokenResponse> {
     const payload = await this.tokens.verifyRefreshToken(request.refreshToken);
     const user    = await this.users.findById(payload.sub);
 
@@ -123,6 +138,6 @@ export class AuthService {
       refreshTokenExpiry,
     });
 
-    return { accessToken, refreshToken };
+    return RefreshTokenResponse.mapFromEntity({ accessToken, refreshToken });
   }
 }

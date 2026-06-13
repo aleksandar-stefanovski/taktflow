@@ -10,7 +10,6 @@ const AuthSchema = z.object({
   ARGON2_MEMORY_COST:          z.coerce.number().int().positive(),
   ARGON2_TIME_COST:            z.coerce.number().int().positive(),
   ARGON2_PARALLELISM:          z.coerce.number().int().positive(),
-  CLERK_SECRET_KEY:            z.string().optional(),
 });
 
 export const authConfig = AuthSchema.parse(process.env);

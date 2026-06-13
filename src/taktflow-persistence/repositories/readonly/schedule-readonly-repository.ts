@@ -48,7 +48,7 @@ export class ScheduleReadonlyRepository extends EntityBaseReadonlyRepository<Sch
 
   static toDomain(row: ScheduleRow): Schedule {
     const entity = new Schedule({
-      key:         new EntityKey(row.id, row.tenantId),
+      key:         EntityKey.reconstitute(row.id, row.tenantId),
       topicId:     row.topicId,
       cron:        row.cron,
       payload:     row.payload as Record<string, unknown>,
